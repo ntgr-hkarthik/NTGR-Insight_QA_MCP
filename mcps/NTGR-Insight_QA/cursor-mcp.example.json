@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "NTGR-Insight_QA": {
+      "command": "node",
+      "args": ["${workspaceFolder}/mcps/NTGR-Insight_QA/index.js"],
+      "env": {
+        "INSIGHT_QA_BASE_URL": "http://127.0.0.1:9323"
+      }
+    }
+  }
+}

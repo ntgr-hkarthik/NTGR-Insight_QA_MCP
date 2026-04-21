@@ -1,0 +1,9 @@
+{
+  "name": "account-navigator",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "@playwright/test": "^1.40.0"
+  }
+}

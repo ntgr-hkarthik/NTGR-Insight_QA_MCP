@@ -1,0 +1,16 @@
+Account Navigator — backup before any edit
+===========================================
+
+tools/account-navigator/server.js is user-validated (signup → mail.tm verify → login →
+newLogin org/location → device add). Do not change it casually.
+
+Before touching server.js (any line):
+  cd tools/account-navigator
+  cp server.js "backups/server-pre-edit-$(date -u +%Y%m%d-%H%M%S).js"
+
+Restore if needed:
+  cp backups/server-pre-edit-YYYYMMDD-HHMMSS.js server.js
+
+Golden snapshots (known-good copies) live under backups/server-golden-*.js
+
+Prefer fixing subscription / Playwright helpers under tests/helpers/ instead of this server.

@@ -1,0 +1,33 @@
+# ── Node ──
+node_modules/
+tools/account-navigator/node_modules/
+
+# ── Playwright output ──
+test-results/
+playwright-report/
+.last-run.json
+
+# ── Auth state (contains session tokens — generate locally via login) ──
+.auth/
+
+# ── Chrome profile (heavy, machine-specific) ──
+.chrome-buster-profile/
+
+# ── Dashboard runtime ──
+dashboard/status.json
+dashboard/test-runner.pid
+*.pid
+*.log
+server.log
+
+# ── Internal scripts (DB access — local only, never commit) ──
+scripts/
+
+# ── OS artefacts ──
+.DS_Store
+Thumbs.db
+
+# ── Editor ──
+.vscode/
+.idea/
+*.swp

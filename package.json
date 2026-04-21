@@ -1,0 +1,36 @@
+{
+  "name": "playwright",
+  "version": "1.0.0",
+  "description": "Quick testing with Playwright MCP for Insight Cloud Portal.",
+  "main": "create_account.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:subs": "npx playwright test tests/subscriptions/",
+    "test:stripe": "npx playwright test tests/subscriptions/stripe-migration.spec.ts",
+    "test:all-subs": "npx playwright test tests/subscriptions/ --reporter=html",
+    "test:onboard": "npx playwright test tests/onboarding/ --headed",
+    "test:onboard:maint": "BASE_URL=https://maint-qa.insight.netgear.com npx playwright test tests/onboarding/ --headed",
+    "report": "npx browser-sync start --server playwright-report --port 9323 --watch --no-open",
+    "report:open": "npx browser-sync start --server playwright-report --port 9323 --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.2.2",
+    "browser-sync": "^3.0.4",
+    "chokidar": "^5.0.0",
+    "ws": "^8.19.0"
+  },
+  "dependencies": {
+    "allure-playwright": "^3.7.0",
+    "dotenv": "^17.3.1",
+    "easy-yopmail": "^5.2.2",
+    "express": "^4.22.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "telegraf": "^4.16.3"
+  }
+}

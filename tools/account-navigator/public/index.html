@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IM-10 Account Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/env-manager.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+      body { background: #0f172a; color: #e2e8f0; font-family: 'DM Sans', 'Inter', system-ui, sans-serif; }
+      select, input, textarea { color-scheme: dark; }
+      /* Section layout driven only by top nav tabs (data-section on #createFlowSection) */
+      #createFlowSection[data-section="signup"] .anv-combined-only { display: none !important; }
+      #createFlowSection[data-section="signup"] #btnCreate { display: none !important; }
+      #createFlowSection[data-section="signup"] #btnCreateSignupOnly { display: inline-flex !important; }
+      #createFlowSection:not([data-section="signup"]) #btnCreateSignupOnly { display: none !important; }
+      #createFlowSection[data-section="devices"] .anv-identity-only { display: none !important; }
+      #createFlowSection[data-section="devices"] .anv-stripe-only { display: none !important; }
+      #anvAddDevicesOnly { display: none !important; }
+      #panel-work[data-work-tab="devices"] #anvAddDevicesOnly { display: block !important; }
+      #panel-work[data-work-tab="devices"] #createFlowSection { display: none !important; }
+      .tab-panel { display: none; }
+      .tab-panel.tab-active { display: block; }
+      .nav-tab-btn { border-radius: 0.75rem; padding: 0.5rem 0.85rem; font-size: 0.8rem; font-weight: 600; color: #94a3b8; transition: background .15s, color .15s; }
+      .nav-tab-btn:hover { color: #e2e8f0; background: rgba(255,255,255,.06); }
+      .nav-tab-btn.nav-tab-active { color: #93c5fd; background: rgba(59,130,246,.12); box-shadow: inset 0 0 0 1px rgba(59,130,246,.25); }
+      /* Accounts tab + forms — see .cursor/rules/ui-control-consistency.mdc */
+      .ctrl-h9 {
+        box-sizing: border-box;
+        min-height: 2.25rem;
+        height: 2.25rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        border-radius: 0.5rem;
+      }
+      button.ctrl-h9 {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+      }
+      select.ctrl-h9 {
+        padding-top: 0;
+        padding-bottom: 0;
+      }
+      .input-base {
+        border: 1px solid rgba(100, 116, 139, 0.55);
+        background: rgba(15, 23, 42, 0.95);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #f1f5f9;
+        box-sizing: border-box;
+      }
+      select.input-base,
+      input.input-base:not([type="checkbox"]):not([type="radio"]) {
+        min-height: 2.25rem;
+        height: 2.25rem;
+        padding: 0 0.75rem;
+      }
+      textarea.input-base {
+        min-height: 5rem;
+        height: auto;
+        padding: 0.5rem 0.75rem;
+      }
+      .input-base:focus {
+        outline: none;
+        border-color: rgba(59,130,246,.55);
+        box-shadow: 0 0 0 1px rgba(59,130,246,.2);
+      }
+      .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.25rem;
+        height: 2.25rem;
+        padding: 0 1.25rem;
+        background: linear-gradient(to bottom, #059669, #047857);
+        color: #fff;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: 1px solid rgba(16, 185, 129, 0.45);
+        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.22);
+      }
+      .btn-primary:hover { filter: brightness(1.07); }
+      .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.25rem;
+        height: 2.25rem;
+        padding: 0 1rem;
+        background: rgba(30, 41, 59, 0.95);
+        border: 1px solid rgba(59,130,246,.35);
+        font-size: 0.875rem;
+        border-radius: 0.5rem;
+        color: #93c5fd;
+        font-weight: 600;
+      }
+      .btn-secondary:hover {
+        background: rgba(51, 65, 85, 0.95);
+        border-color: rgba(59,130,246,.55);
+      }
+      .btn-danger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.25rem;
+        height: 2.25rem;
+        padding: 0 1rem;
+        color: #fecaca;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+        background: rgba(127, 29, 29, 0.35);
+      }
+      .btn-danger:hover {
+        color: #fff;
+        border-color: rgba(248, 113, 113, 0.65);
+        background: rgba(153, 27, 27, 0.45);
+      }
+      /* Full combo: stack identity + devices + Stripe (single column) */
+      #createFlowSection[data-section="full"] #createFlowGrid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      #createFlowSection[data-section="full"] #createFlowGrid > .anv-identity-only,
+      #createFlowSection[data-section="full"] #createFlowGrid > .anv-combined-only {
+        width: 100% !important;
+        max-width: none !important;
+      }
+      .anv-dev-input {
+        box-sizing: border-box;
+        min-height: 2.25rem;
+        height: 2.25rem;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(71, 85, 105, 0.85);
+        background: rgba(2, 6, 23, 0.82);
+        padding: 0 0.75rem;
+        font-size: 0.875rem;
+        color: #f1f5f9;
+        width: 100%;
+      }
+      .anv-dev-input:focus {
+        outline: none;
+        border-color: rgba(59,130,246,.45);
+        box-shadow: 0 0 0 2px rgba(59,130,246,.15);
+      }
+      /* Checkboxes — match bordered inputs / ctrl-h9 scale (not browser-default tiny boxes) */
+      .anv-checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+        min-width: 1.25rem;
+        flex-shrink: 0;
+        border-radius: 0.375rem;
+        border: 1px solid rgba(100, 116, 139, 0.9);
+        background: rgba(15, 23, 42, 0.95);
+        accent-color: #3b82f6;
+        cursor: pointer;
+        vertical-align: middle;
+      }
+      .anv-checkbox:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 1), 0 0 0 4px rgba(59, 130, 246, 0.35);
+      }
+      .anv-checkbox:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b bg-[#0f172a] text-slate-200">
+    <div class="max-w-[min(1400px,96vw)] mx-auto px-4 pt-6 pb-10">
+        <!-- App header -->
+        <header class="mb-6 rounded-2xl border border-blue-500/20 bg-slate-900/40 p-5 shadow-xl shadow-blue-950/20 backdrop-blur-sm">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-blue-400/90">Insight · QA automation</p>
+                    <h1 class="mt-1 text-2xl font-bold tracking-tight text-white">Account Navigator</h1>
+                    <p class="mt-1 max-w-2xl text-sm text-slate-400">Mail.tm signup, onboarding, devices, and Stripe — pick a flow tab so the form stays focused.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 rounded-xl border border-blue-500/20 bg-slate-900/40 backdrop-blur-sm px-4 py-3">
+                    <label class="text-xs font-medium text-slate-400">Portal</label>
+                    <select id="insightEnvSelect" class="input-base min-w-[14rem] text-slate-100 shadow-inner shadow-black/20" title="Signup, login, devices, Manage Subscriptions, and Stripe return use this host">
+                        <!-- Populated by env-manager.js (defaults + user-added hosts) -->
+                    </select>
+                    <button id="btnNext" type="button" class="ctrl-h9 px-4 rounded-lg bg-blue-600 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50">Launch / Next</button>
+                    <button id="btnCancel" type="button" class="ctrl-h9 px-4 rounded-lg border border-red-500/40 bg-red-950/40 text-sm font-medium text-red-200 hover:bg-red-900/50">Close browser</button>
+                    <div id="status" class="min-w-[8rem] text-right text-xs font-medium text-slate-400">Idle</div>
+                </div>
+            </div>
+
+            <!-- Primary flow tabs -->
+            <nav class="mt-5 flex flex-wrap items-center gap-2 border-t border-white/5 pt-4" id="mainFlowTabs" aria-label="Flow tabs">
+                <button type="button" class="nav-tab-btn nav-tab-active" data-main-tab="home">Home</button>
+                <button type="button" class="nav-tab-btn" data-main-tab="devices">Signup</button>
+                <button type="button" class="nav-tab-btn" data-main-tab="flows">Devices only</button>
+                <button type="button" class="nav-tab-btn" data-main-tab="combined">Full combo</button>
+                <button type="button" class="nav-tab-btn shrink-0 ml-auto" data-main-tab="accounts">Accounts</button>
+            </nav>
+        </header>
+
+        <details id="mongoSection" class="mb-6 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-sm">
+            <summary class="cursor-pointer font-semibold text-amber-200 select-none">QA — Mongo: Grace / Expired / Active (paid subscription)</summary>
+            <p class="mt-2 text-xs text-amber-100/85 leading-relaxed border border-amber-500/25 rounded-lg bg-amber-950/35 px-3 py-2">
+                <strong class="text-amber-200">Before any license Mongo change:</strong> in Insight → Manage Subscriptions, turn <strong>Auto renewal</strong> off — <strong>Cancel Renewal</strong> → <strong>OK</strong> or <strong>Yes</strong> in the dialog.
+            </p>
+            <p class="mt-2 text-xs text-slate-400 leading-relaxed">
+                Micro-steps: license-status → license-end → devices-lic-exp (or all). Dry run first; inspect DB after each step. failedStep in JSON if validation fails. Then Insight: License Job → Device Job (NHB device flows: run Device Job again at the end — see below).
+            </p>
+            <p class="mt-2 text-[11px] text-slate-500 max-w-3xl">
+                Scope (checkboxes only): subscription only → license steps. NHB devices only → device step. Both unchecked <em>or</em> both checked → full sequence (license first, then devices).
+            </p>
+            <div class="mb-3 mt-2 space-y-2 max-w-3xl">
+                <label class="flex items-start gap-3 text-xs text-slate-400 cursor-pointer">
+                    <input type="checkbox" id="qaSubLicenseOnly" class="anv-checkbox mt-0.5" />
+                    <span>Subscription record only. Updates the paid licenseKeyInfo document (status and end date). Does not update device documents.</span>
+                </label>
+                <label class="flex items-start gap-3 text-xs text-slate-400 cursor-pointer">
+                    <input type="checkbox" id="qaSubDevicesOnly" class="anv-checkbox mt-0.5" />
+                    <span>NHB devices only. Updates device documents (licExpDate for serials matching /^4W/). Does not update licenseKeyInfo. Uncheck both boxes to run the full sequence.</span>
+                </label>
+            </div>
+            <details class="mb-3 max-w-3xl rounded-lg border border-amber-500/25 bg-amber-950/20 px-3 py-2 text-[11px] text-slate-400">
+                <summary class="cursor-pointer font-medium text-amber-100/90 select-none">NHB — Device Job before device Mongo; then jobs after Mongo</summary>
+                <p class="mt-2 text-slate-500">Full sequence (license Mongo, then device Mongo): run <strong class="text-slate-400">Device Job</strong> in Insight immediately <em>before</em> the device/<code class="text-slate-500">licExpDate</code> step — not required before pure license updates.</p>
+                <ol class="mt-2 list-decimal space-y-1.5 pl-4 text-slate-400">
+                    <li><strong class="text-slate-300">Run Device Job</strong> first (<code class="text-slate-500">#run-device-job-button</code>). Do not change <code class="text-slate-500">device</code> documents in Mongo until this has completed.</li>
+                    <li>Run this QA Mongo action (updates <code class="text-slate-500">licExpDate</code> on matching <code class="text-slate-500">device</code> rows).</li>
+                    <li><strong class="text-slate-300">Run License Job</strong> (<code class="text-slate-500">#run-license-job-button</code>).</li>
+                    <li><strong class="text-slate-300">Run Device Job</strong> (<code class="text-slate-500">#run-device-job-button</code>).</li>
+                    <li><strong class="text-emerald-300/95">Run Device Job again</strong> — second Device Job after License Job so portal and Devices finish syncing.</li>
+                </ol>
+            </details>
+            <div class="mt-3 flex flex-wrap items-end gap-2">
+                <label class="flex flex-col gap-1">
+                    <span class="text-[10px] text-slate-500">Mongo env</span>
+                    <select id="qaSubInsight" class="input-base w-44 max-w-full" title="Mongo host derived from selected env">
+                        <!-- Populated by env-manager.js -->
+                    </select>
+                </label>
+                <label class="flex flex-col gap-1">
+                    <span class="text-[10px] text-slate-500">Account email</span>
+                    <input type="email" id="qaSubEmail" class="input-base w-72 max-w-full" placeholder="account@example.com" autocomplete="off" />
+                </label>
+                <label class="flex items-center gap-3 text-xs text-slate-400 mb-2">
+                    <input type="checkbox" id="qaSubDry" class="anv-checkbox" /> Dry run
+                </label>
+                <label class="flex items-center gap-3 text-xs text-rose-300/90 mb-2">
+                    <input type="checkbox" id="qaSubBypass" class="anv-checkbox" /> Bypass validation
+                </label>
+                <button type="button" class="btn-secondary" id="qaSubGrace">Move to Grace</button>
+                <button type="button" class="btn-secondary" id="qaSubExpired">Move to Expired</button>
+                <button type="button" class="btn-secondary border-emerald-600/50 bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-100" id="qaSubActive">Move to Active</button>
+                <!-- Ephemeral Mongo unlock — one master password unlocks all envs; memory-only -->
+                <button type="button" id="qaSubUnlock"
+                    class="ctrl-h9 px-3 rounded-lg border border-cyan-500/40 bg-cyan-950/40 text-cyan-100 hover:bg-cyan-900/50 text-xs font-semibold"
+                    title="One master password unlocks Mongo for every env. Stored in memory only — cleared on server restart.">
+                    🔒 <span id="qaSubUnlockLabel">Unlock Mongo</span>
+                </button>
+            </div>
+
+            <!-- Master unlock modal -->
+            <div id="mongoUnlockModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" style="display:none">
+                <div class="w-full max-w-md rounded-xl border border-cyan-500/30 bg-slate-900/95 p-5 shadow-2xl shadow-cyan-950/40">
+                    <h3 class="text-sm font-semibold text-cyan-200 uppercase tracking-[0.18em]">🔒 Unlock Mongo</h3>
+                    <p class="mt-2 text-xs text-slate-400 leading-relaxed">
+                        One master password unlocks all envs (pri-qa, maint-beta, maint-qa, prod, custom).
+                        Stored in the Node server's memory only — cleared on dashboard restart.
+                    </p>
+                    <div class="mt-4 flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <input id="mongoUnlockPwd" type="password" autocomplete="off" placeholder="Master password"
+                                class="input-base w-full pr-10 text-slate-100" />
+                            <button type="button" id="mongoUnlockEye"
+                                class="absolute inset-y-0 right-0 px-3 text-slate-400 hover:text-cyan-300 text-sm"
+                                title="Show / hide password" aria-label="Show password">👁</button>
+                        </div>
+                    </div>
+                    <div id="mongoUnlockErr" class="mt-2 text-xs text-red-300" style="display:none"></div>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" id="mongoUnlockCancel"
+                            class="ctrl-h9 px-3 rounded-lg border border-slate-600 bg-slate-800/60 text-slate-200 hover:bg-slate-700/60 text-xs">Cancel</button>
+                        <button type="button" id="mongoUnlockSubmit"
+                            class="ctrl-h9 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-lg shadow-cyan-900/30">Unlock</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 border-t border-white/10 pt-3">
+                <h4 class="text-xs font-semibold text-slate-300 mb-2">DB change history (this Mongo env)</h4>
+                <p class="text-[10px] text-slate-500 mb-2">Email, status (from → to), scope (LIC / DEV / Both). Changes when you pick <strong class="text-slate-400">Mongo env</strong> above.</p>
+                <div class="overflow-x-auto max-h-48 rounded border border-slate-700/80">
+                    <table class="w-full text-left text-[11px] text-slate-300">
+                        <thead class="bg-slate-950/80 text-slate-400"><tr>
+                            <th class="px-2 py-1.5 font-medium">Time (UTC)</th>
+                            <th class="px-2 py-1.5 font-medium">Email</th>
+                            <th class="px-2 py-1.5 font-medium">Status</th>
+                            <th class="px-2 py-1.5 font-medium">Scope</th>
+                            <th class="px-2 py-1.5 font-medium">Mode</th>
+                        </tr></thead>
+                        <tbody id="qaSubMongoHistoryBody"><tr><td colspan="5" class="px-2 py-2 text-slate-500">Loading…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <pre id="qaSubOut" class="mt-3 max-h-52 overflow-auto rounded-lg bg-slate-950/80 p-3 text-[11px] text-slate-300 whitespace-pre-wrap hidden"></pre>
+        </details>
+
+        <!-- Home -->
+        <div id="panel-home" class="tab-panel tab-active mb-8">
+            <div class="grid gap-4 md:grid-cols-3">
+                <button type="button" data-jump-tab="devices" class="rounded-xl border border-blue-500/20 bg-slate-900/40 p-5 text-left transition backdrop-blur-sm hover:border-blue-400/40 hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    <h3 class="text-sm font-semibold text-blue-300">Signup</h3>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-400">Mailbox, country, auth-stg signup — opens the <strong>Signup</strong> flow tab.</p>
+                </button>
+                <button type="button" data-jump-tab="flows" class="rounded-xl border border-blue-500/20 bg-slate-900/40 p-5 text-left transition backdrop-blur-sm hover:border-blue-400/40 hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    <h3 class="text-sm font-semibold text-blue-300">Devices only</h3>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-400">Session + CSV bulk add. Opens the <strong>Devices only</strong> tab (device counts below).</p>
+                </button>
+                <button type="button" data-jump-tab="combined" class="rounded-xl border border-blue-500/20 bg-slate-900/40 p-5 text-left transition backdrop-blur-sm hover:border-blue-400/40 hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+                    <h3 class="text-sm font-semibold text-blue-300">Full combo</h3>
+                    <p class="mt-2 text-xs leading-relaxed text-slate-400">Signup, devices, and optional Stripe in one stacked form — opens <strong>Full combo</strong>.</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Provisioning: visible for Signup, Devices only, Full combo tabs -->
+        <div id="panel-work" class="tab-panel mb-8">
+        <!-- Create Account -->
+        <section id="createFlowSection" data-section="signup" class="mb-10 relative overflow-hidden rounded-2xl border border-blue-500/20 bg-slate-900/40 backdrop-blur-sm shadow-xl shadow-blue-950/20">
+            <div class="pointer-events-none absolute -right-32 -top-32 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl"></div>
+            <div class="pointer-events-none absolute -bottom-28 -left-28 h-64 w-64 rounded-full bg-violet-600/12 blur-3xl"></div>
+
+            <div class="relative p-6 sm:p-8">
+                <div class="mb-8">
+                    <p class="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-blue-400/90">Provisioning</p>
+                    <h2 class="mt-2 text-2xl font-bold tracking-tight text-white sm:text-[1.75rem]">
+                        <span class="bg-gradient-to-r from-blue-200 via-blue-100 to-violet-300 bg-clip-text text-transparent">Create new account</span>
+                    </h2>
+                    <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
+                        New mail.tm inbox, Insight signup, onboarding, and optional device + Stripe — one flow.
+                    </p>
+                </div>
+
+                <div id="createFlowGrid" class="grid gap-6 lg:grid-cols-12 lg:gap-8">
+                    <div class="anv-identity-only space-y-5 lg:col-span-5">
+                        <div class="rounded-xl border border-white/10 bg-slate-950/55 p-5 shadow-inner shadow-black/20 backdrop-blur-sm">
+                            <label for="prefixInput" class="text-xs font-semibold uppercase tracking-wide text-slate-400">Mailbox prefix</label>
+                            <p class="mt-0.5 text-[11px] text-slate-500">Becomes <span class="font-mono text-slate-400">prefix@sharebot.net</span></p>
+                            <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                                <input type="text" id="prefixInput" placeholder="e.g. ctxus123" class="input-base min-w-0 flex-1 w-full text-slate-100 shadow-inner shadow-black/20 transition focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20" />
+                                <div class="ctrl-h9 inline-flex shrink-0 items-center justify-center border border-slate-600/70 bg-slate-900/90 px-4 text-sm font-medium text-blue-100/90">@sharebot.net</div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-white/10 bg-slate-950/55 p-5 shadow-inner shadow-black/20 backdrop-blur-sm">
+                            <div class="grid gap-4 sm:grid-cols-3">
+                                <div class="space-y-2">
+                                    <label for="flowSelect" class="text-xs font-semibold uppercase tracking-wide text-slate-400">Signup flow</label>
+                                    <select id="flowSelect" class="input-base w-full text-slate-100 shadow-inner shadow-black/20 transition focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                                        <option value="new" selected>New Flow (auth-stg)</option>
+                                        <option value="old">Old Flow (classic/#/register)</option>
+                                    </select>
+                                    <p class="text-[11px] leading-snug text-slate-500">OC auth vs classic registration.</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="browserSelect" class="text-xs font-semibold uppercase tracking-wide text-slate-400">Browser</label>
+                                    <select id="browserSelect" class="input-base w-full text-slate-100 shadow-inner shadow-black/20 transition focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                                        <option value="firefox" selected>Firefox</option>
+                                        <option value="chrome">Chrome / Chromium</option>
+                                    </select>
+                                    <p class="text-[11px] leading-snug text-slate-500">Browser used for automation.</p>
+                                </div>
+                                <div class="space-y-2 sm:col-span-3">
+                                    <label for="countrySelect" class="text-xs font-semibold uppercase tracking-wide text-slate-400">Account country</label>
+                                    <select id="countrySelect" class="input-base w-full max-w-none text-slate-100 shadow-inner shadow-black/20 transition focus:border-blue-500/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                                                        <option value="AF">Afghanistan (AF)</option>
+                                                        <option value="AL">Albania (AL)</option>
+                                                        <option value="DZ">Algeria (DZ)</option>
+                                                        <option value="AD">Andorra (AD)</option>
+                                                        <option value="AR">Argentina (AR)</option>
+                                                        <option value="AM">Armenia (AM)</option>
+                                                        <option value="AU">Australia (AU)</option>
+                                                        <option value="AT">Austria (AT)</option>
+                                                        <option value="AZ">Azerbaijan (AZ)</option>
+                                                        <option value="BS">Bahamas (BS)</option>
+                                                        <option value="BH">Bahrain (BH)</option>
+                                                        <option value="BD">Bangladesh (BD)</option>
+                                                        <option value="BY">Belarus (BY)</option>
+                                                        <option value="BE">Belgium (BE)</option>
+                                                        <option value="BZ">Belize (BZ)</option>
+                                                        <option value="BO">Bolivia (BO)</option>
+                                                        <option value="BA">Bosnia & Herzegovina (BA)</option>
+                                                        <option value="BR">Brazil (BR)</option>
+                                                        <option value="BN">Brunei Darussalam (BN)</option>
+                                                        <option value="BG">Bulgaria (BG)</option>
+                                                        <option value="CA">Canada (CA)</option>
+                                                        <option value="CL">Chile (CL)</option>
+                                                        <option value="CN">China (CN)</option>
+                                                        <option value="CO">Colombia (CO)</option>
+                                                        <option value="CR">Costa Rica (CR)</option>
+                                                        <option value="HR">Croatia (HR)</option>
+                                                        <option value="CY">Cyprus (CY)</option>
+                                                        <option value="CZ">Czech Republic (CZ)</option>
+                                                        <option value="DK">Denmark (DK)</option>
+                                                        <option value="DO">Dominican Republic (DO)</option>
+                                                        <option value="EC">Ecuador (EC)</option>
+                                                        <option value="EG">Egypt (EG)</option>
+                                                        <option value="SV">El Salvador (SV)</option>
+                                                        <option value="EE">Estonia (EE)</option>
+                                                        <option value="FI">Finland (FI)</option>
+                                                        <option value="FR">France (FR)</option>
+                                                        <option value="GF">French Guiana (GF)</option>
+                                                        <option value="PF">French Polynesia (PF)</option>
+                                                        <option value="GE">Georgia (GE)</option>
+                                                        <option value="DE">Germany (DE)</option>
+                                                        <option value="GI">Gibraltar (GI)</option>
+                                                        <option value="GR">Greece (GR)</option>
+                                                        <option value="GL">Greenland (GL)</option>
+                                                        <option value="GP">Guadeloupe (GP)</option>
+                                                        <option value="GU">Guam (GU)</option>
+                                                        <option value="GT">Guatemala (GT)</option>
+                                                        <option value="HN">Honduras (HN)</option>
+                                                        <option value="HK">Hong Kong (HK)</option>
+                                                        <option value="HU">Hungary (HU)</option>
+                                                        <option value="IS">Iceland (IS)</option>
+                                                        <option value="IN">India (IN)</option>
+                                                        <option value="ID">Indonesia (ID)</option>
+                                                        <option value="IR">Iran (IR)</option>
+                                                        <option value="IQ">Iraq (IQ)</option>
+                                                        <option value="IE">Ireland (IE)</option>
+                                                        <option value="IL">Israel (IL)</option>
+                                                        <option value="IT">Italy (IT)</option>
+                                                        <option value="JM">Jamaica (JM)</option>
+                                                        <option value="JP">Japan (JP)</option>
+                                                        <option value="JO">Jordan (JO)</option>
+                                                        <option value="KZ">Kazakhstan (KZ)</option>
+                                                        <option value="KE">Kenya (KE)</option>
+                                                        <option value="KR">Korea Republic (KR)</option>
+                                                        <option value="KW">Kuwait (KW)</option>
+                                                        <option value="LV">Latvia (LV)</option>
+                                                        <option value="LB">Lebanon (LB)</option>
+                                                        <option value="LI">Liechtenstein (LI)</option>
+                                                        <option value="LT">Lithuania (LT)</option>
+                                                        <option value="LU">Luxembourg (LU)</option>
+                                                        <option value="MO">Macau (MO)</option>
+                                                        <option value="MK">Macedonia (MK)</option>
+                                                        <option value="MY">Malaysia (MY)</option>
+                                                        <option value="MT">Malta (MT)</option>
+                                                        <option value="MQ">Martinique (MQ)</option>
+                                                        <option value="MU">Mauritius (MU)</option>
+                                                        <option value="MX">Mexico (MX)</option>
+                                                        <option value="MD">Moldova (MD)</option>
+                                                        <option value="MC">Monaco (MC)</option>
+                                                        <option value="ME">Montenegro (ME)</option>
+                                                        <option value="MA">Morocco (MA)</option>
+                                                        <option value="NL">Netherlands (NL)</option>
+                                                        <option value="AN">Netherlands Antilles (AN)</option>
+                                                        <option value="NZ">New Zealand (NZ)</option>
+                                                        <option value="NI">Nicaragua (NI)</option>
+                                                        <option value="NG">Nigeria (NG)</option>
+                                                        <option value="NO">Norway (NO)</option>
+                                                        <option value="OM">Oman (OM)</option>
+                                                        <option value="PK">Pakistan (PK)</option>
+                                                        <option value="PA">Panama (PA)</option>
+                                                        <option value="PY">Paraguay (PY)</option>
+                                                        <option value="PE">Peru (PE)</option>
+                                                        <option value="PH">Philippines (PH)</option>
+                                                        <option value="PL">Poland (PL)</option>
+                                                        <option value="PT">Portugal (PT)</option>
+                                                        <option value="PR">Puerto Rico (PR)</option>
+                                                        <option value="QA">Qatar (QA)</option>
+                                                        <option value="RE">Reunion (RE)</option>
+                                                        <option value="RO">Romania (RO)</option>
+                                                        <option value="RU">Russia (RU)</option>
+                                                        <option value="SM">San Marino (SM)</option>
+                                                        <option value="SA">Saudi Arabia (SA)</option>
+                                                        <option value="RS">Serbia (RS)</option>
+                                                        <option value="SG">Singapore (SG)</option>
+                                                        <option value="SK">Slovakia (SK)</option>
+                                                        <option value="SI">Slovenia (SI)</option>
+                                                        <option value="ZA">South Africa (ZA)</option>
+                                                        <option value="ES">Spain (ES)</option>
+                                                        <option value="LK">Sri Lanka (LK)</option>
+                                                        <option value="SE">Sweden (SE)</option>
+                                                        <option value="CH">Switzerland (CH)</option>
+                                                        <option value="TW">Taiwan (TW)</option>
+                                                        <option value="TH">Thailand (TH)</option>
+                                                        <option value="TT">Trinidad and Tobago (TT)</option>
+                                                        <option value="TN">Tunisia (TN)</option>
+                                                        <option value="TR">Turkey (TR)</option>
+                                                        <option value="AE">UAE (AE)</option>
+                                                        <option value="GB">UK (GB)</option>
+                                                        <option value="UA">Ukraine (UA)</option>
+                                                        <option value="US" selected>United States of America (US)</option>
+                                                        <option value="VI">United States Virgin Island (VI)</option>
+                                                        <option value="UY">Uruguay (UY)</option>
+                                                        <option value="VA">Vatican City (VA)</option>
+                                                        <option value="VE">Venezuela (VE)</option>
+                                                        <option value="VN">Vietnam (VN)</option>
+                                                        <option value="YE">Yemen (YE)</option>
+                                                        <option value="ZW">Zimbabwe (ZW)</option>
+                                                    </select>
+                                    <p class="text-[11px] leading-snug text-slate-500">Used during signup / profile.</p>
+                                </div>
+                            </div>
+                        </div>
+                            <button type="button" id="btnCreateSignupOnly" class="ctrl-h9 mt-4 hidden w-full inline-flex items-center justify-center rounded-xl border border-blue-500/40 bg-slate-900/60 px-4 text-sm font-semibold text-blue-100 hover:bg-slate-800/80">Create account (signup only)</button>
+                    </div>
+
+                    <div class="anv-combined-only space-y-5 lg:col-span-7">
+                        <div class="anv-device-only rounded-xl border border-blue-500/20 bg-slate-900/50 backdrop-blur-sm p-5">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-sm font-semibold text-blue-300">Device onboarding</h3>
+                                    <p class="mt-1 text-xs text-slate-500">Serial + MAC; single device uses tree flow, 2+ uses bulk CSV.</p>
+                                </div>
+                                <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-blue-500/15 bg-slate-900/50 px-3 py-2 transition hover:border-blue-400/30">
+                                    <input type="checkbox" id="addDeviceCheck" class="anv-checkbox" />
+                                    <span class="text-sm font-medium text-slate-200">Add device</span>
+                                </label>
+                            </div>
+                            <div class="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                <div class="space-y-1.5">
+                                    <label for="nhbCountInput" class="text-[11px] font-medium text-slate-400">NHB count</label>
+                                    <input type="number" id="nhbCountInput" min="0" max="1000" value="1" title="Non-handset-bundled (e.g. 4W8…)" class="anv-dev-input" />
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label for="hbCountInput" class="text-[11px] font-medium text-slate-400">HB count</label>
+                                    <input type="number" id="hbCountInput" min="0" max="1000" value="0" title="Handset-bundled (e.g. 4XT…)" class="anv-dev-input" />
+                                </div>
+                                <div class="space-y-1.5 sm:col-span-2">
+                                    <label for="deviceOrgNameInput" class="text-[11px] font-medium text-slate-400">Org override <span class="font-normal text-slate-500">(optional)</span></label>
+                                    <input type="text" id="deviceOrgNameInput" placeholder="Bulk org override" class="anv-dev-input" title='newLogin uses org "org" unless you need a different tree label.' />
+                                </div>
+                                <div class="space-y-1.5 sm:col-span-2">
+                                    <label for="deviceLocationNameInput" class="text-[11px] font-medium text-slate-400">CSV location name</label>
+                                    <input type="text" id="deviceLocationNameInput" placeholder="default: loc" class="anv-dev-input" title='Must match onboarding location — default "loc".' />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="anv-device-only flex flex-wrap items-center gap-3">
+                            <button type="button" id="btnCreate" class="ctrl-h9 group relative inline-flex min-w-[12rem] items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 via-blue-600 to-blue-600 px-8 text-sm font-semibold text-white shadow-xl shadow-blue-900/35 transition hover:from-blue-500 hover:via-blue-500 hover:to-blue-500 hover:shadow-blue-800/40 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:ring-offset-2 focus:ring-offset-slate-950">
+                                <span class="relative z-10">Create & Add</span>
+                                <span class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 opacity-0 transition group-hover:opacity-100"></span>
+                            </button>
+                        </div>
+
+                        <div class="anv-stripe-only rounded-xl border border-blue-500/20 bg-slate-900/50 backdrop-blur-sm p-5">
+                            <div class="flex gap-3 sm:gap-4">
+                                <input type="checkbox" id="purchaseAllInOne" aria-describedby="purchaseAllInOneHelp" class="anv-checkbox mt-0.5" />
+                                <div class="min-w-0 flex-1 space-y-4">
+                                    <label for="purchaseAllInOne" class="block cursor-pointer rounded-lg border border-blue-500/15 bg-slate-900/35 p-3 transition hover:border-blue-400/30 hover:bg-slate-900/55">
+                                        <span class="block text-sm font-semibold leading-snug text-emerald-100/95">Then subscribe (Stripe) in the same run</span>
+                                        <span id="purchaseAllInOneHelp" class="mt-1.5 block text-xs leading-relaxed text-slate-500">Requires <strong class="text-slate-400">Add device</strong> (trial on Manage Subscriptions).</span>
+                                    </label>
+                                    <div id="purchasePanel" class="hidden space-y-4 rounded-lg border border-slate-600 bg-slate-900/60 p-4">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-slate-400 mb-1">Plan</label>
+                                                        <select id="purchasePlan" class="input-base w-full text-slate-100">
+                                                            <option value="1-Year" selected>1-Year (Prepaid)</option>
+                                                            <option value="3-Year">3-Year (Prepaid)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-xs font-medium text-slate-400 mb-1">Quantity</label>
+                                                        <input type="number" id="purchaseQty" min="1" value="1" class="input-base w-full text-slate-100">
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label class="flex items-center gap-3 cursor-pointer">
+                                                        <input type="checkbox" id="purchaseFullAddr" class="anv-checkbox">
+                                                        <span class="text-sm font-medium text-slate-300">Fill full billing address (Stripe manual)</span>
+                                                    </label>
+                                                    <div id="purchaseAddrBlock" class="mt-2 space-y-2 opacity-50 pointer-events-none">
+                                                        <p class="text-xs text-slate-500">Country list matches the Stripe preview matrix. Changing country loads sample address lines for that ISO (not US-only).</p>
+                                                        <select id="purchaseAddrCountry" class="input-base w-full max-w-xs text-slate-100">
+                                                            <option value="">Loading…</option>
+                                                        </select>
+                                                        <input type="text" id="purchaseAddr1" placeholder="Address line 1" class="input-base w-full text-slate-100" value="">
+                                                        <input type="text" id="purchaseAddr2" placeholder="Line 2 (optional)" class="input-base w-full text-slate-100" value="">
+                                                        <div class="grid grid-cols-2 gap-2">
+                                                            <input type="text" id="purchaseCity" placeholder="City" class="input-base w-full text-slate-100" value="">
+                                                            <input type="text" id="purchaseZip" placeholder="ZIP / Postcode" class="input-base w-full text-slate-100" value="">
+                                                        </div>
+                                                        <input type="text" id="purchaseState" placeholder="State / Region / County" class="input-base w-full text-slate-100" value="">
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label class="flex items-center gap-3 cursor-pointer">
+                                                        <input type="checkbox" id="purchaseBiz" class="anv-checkbox">
+                                                        <span class="text-sm font-medium text-slate-300">Business purchase (tax ID)</span>
+                                                    </label>
+                                                    <div id="purchaseBizBlock" class="mt-2 space-y-2 opacity-50 pointer-events-none">
+                                                        <input type="text" id="purchaseBizId" placeholder="ABN / VAT / GSTIN…" class="input-base w-full text-slate-100">
+                                                        <input type="text" id="purchaseTaxHint" placeholder="Tax ID type hint (optional)" class="input-base w-full text-slate-100">
+                                                        <input type="text" id="purchaseCardholder" placeholder="Name on card" class="input-base w-full text-slate-100" value="Test Navigator">
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label class="block text-xs font-medium text-slate-400 mb-1">Max wait after Pay (ms)</label>
+                                                    <input type="number" id="purchaseMaxWait" value="4500" step="1000" class="input-base w-full max-w-xs text-slate-100">
+                                                </div>
+
+                                                <div class="rounded-lg border border-blue-500/15 bg-slate-900/40 p-3 space-y-2">
+                                                    <p class="text-xs font-medium text-slate-400">Credit card</p>
+                                                    <div class="grid grid-cols-3 gap-2">
+                                                        <div class="col-span-3 sm:col-span-1">
+                                                            <label class="block text-[11px] text-slate-500 mb-1">Card number</label>
+                                                            <input type="text" id="purchaseCardNumber" value="4242424242424242" maxlength="19" placeholder="4242424242424242" class="input-base w-full text-slate-100 font-mono text-xs">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[11px] text-slate-500 mb-1">Expiry</label>
+                                                            <input type="text" id="purchaseCardExpiry" value="12/30" maxlength="5" placeholder="MM/YY" class="input-base w-full text-slate-100 font-mono text-xs">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-[11px] text-slate-500 mb-1">CVC</label>
+                                                            <input type="text" id="purchaseCardCvc" value="123" maxlength="4" placeholder="123" class="input-base w-full text-slate-100 font-mono text-xs">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            <p class="text-xs text-slate-500 mt-6 max-w-4xl leading-relaxed border-t border-white/5 pt-5">
+                <strong class="text-slate-400">newLogin onboarding</strong> uses organization <code class="rounded bg-slate-800/80 px-1 py-0.5 text-[11px]">org</code> and location <code class="rounded bg-slate-800/80 px-1 py-0.5 text-[11px]">loc</code>. <strong class="text-slate-400">1 device</strong> → single-device tree flow. <strong class="text-slate-400">2+</strong> → Multiple devices; CSV header from <code class="rounded bg-slate-800/80 px-1 py-0.5 text-[11px]">bulk-devices-reference.csv</code> (or <code class="rounded bg-slate-800/80 px-1 py-0.5 text-[11px]">bulk-devices-staging copy.csv</code> if present), data rows only to <code class="rounded bg-slate-800/80 px-1 py-0.5 text-[11px]">bulk-devices-staging.csv</code>. Header must match Insight’s template (IMEI column uses <code class="rounded bg-slate-800/80 px-1 py-0.5 text-[11px]">Devices,Ex</code> with no space before <code class="rounded bg-slate-800/80 px-1 py-0.5 text-[11px]">Ex</code>).
+            </p>
+            </div>
+        </section>
+
+        <div id="anvAddDevicesOnly" class="mt-6 rounded-xl border border-blue-500/20 bg-slate-900/40 backdrop-blur-sm p-5 shadow-xl shadow-blue-950/15">
+            <h2 class="text-lg font-semibold mb-2 text-blue-300">Add devices (session)</h2>
+            <p class="text-sm text-slate-400 mb-3">Requires an open browser session (<strong>Open</strong> or after <strong>Create &amp; Add</strong>). Runs the <em>Multiple devices</em> CSV flow against an existing session.</p>
+            <div class="grid gap-3 grid-cols-2 sm:grid-cols-4 mb-4">
+                <div class="space-y-1">
+                    <label for="nhbCountOnlyInput" class="text-[11px] font-medium text-slate-400">NHB count</label>
+                    <input type="number" id="nhbCountOnlyInput" min="0" max="1000" value="1" title="Non-handset-bundled (e.g. 4W8…)" class="anv-dev-input w-full" />
+                </div>
+                <div class="space-y-1">
+                    <label for="hbCountOnlyInput" class="text-[11px] font-medium text-slate-400">HB count</label>
+                    <input type="number" id="hbCountOnlyInput" min="0" max="1000" value="0" title="Handset-bundled (e.g. 4XT…)" class="anv-dev-input w-full" />
+                </div>
+                <div class="space-y-1 col-span-2 sm:col-span-2">
+                    <label for="deviceOrgOnlyInput" class="text-[11px] font-medium text-slate-400">Org override <span class="font-normal text-slate-500">(optional)</span></label>
+                    <input type="text" id="deviceOrgOnlyInput" placeholder="Org override" class="anv-dev-input w-full" title="Leave blank to use default org." />
+                </div>
+                <div class="space-y-1 col-span-2 sm:col-span-2">
+                    <label for="deviceLocationOnlyInput" class="text-[11px] font-medium text-slate-400">CSV location name</label>
+                    <input type="text" id="deviceLocationOnlyInput" placeholder="default: loc" class="anv-dev-input w-full" title='Must match onboarding location — default "loc".' />
+                </div>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <button type="button" id="btnAddDevicesOnly" class="ctrl-h9 inline-flex items-center justify-center rounded-lg bg-blue-600 px-6 text-sm font-semibold text-white hover:bg-blue-500">
+                    Add devices now
+                </button>
+                <span id="addDevicesOnlyStatus" class="text-sm text-slate-400"></span>
+            </div>
+        </div>
+        </div><!-- /panel-work -->
+
+        <section id="panel-accounts" aria-label="Accounts" class="mt-10 w-full scroll-mt-8 rounded-2xl border border-blue-500/20 bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 shadow-xl shadow-blue-950/20">
+            <div class="mb-6 rounded-xl border border-blue-500/20 bg-slate-900/50 backdrop-blur-sm p-3 sm:p-4 shadow-xl shadow-blue-950/15">
+                <h2 class="text-lg font-semibold mb-2 text-blue-300">Bulk Add Accounts</h2>
+                <p class="text-sm text-slate-400 mb-4">Paste emails (comma, space, or newline). Assign them to a tab.</p>
+                <div class="flex flex-wrap items-end gap-3 mb-3">
+                    <label class="flex flex-col gap-1">
+                        <span class="text-xs text-slate-400">Tab / label</span>
+                        <input
+                            type="text"
+                            id="bulkTagInput"
+                            list="bulkTagDatalist"
+                            value="Bulk Added"
+                            class="input-base w-56 max-w-full"
+                            title="Suggestions from your account list; you can type any tab name"
+                            autocomplete="off"
+                        />
+                    </label>
+                    <datalist id="bulkTagDatalist"></datalist>
+                </div>
+                <textarea id="bulkInput" rows="3" class="input-base w-full mb-3" placeholder="user1@domain.com, user2@domain.com&#10;user3@domain.com"></textarea>
+                <button type="button" id="btnBulkAdd" class="btn-primary">Extract &amp; Add Emails</button>
+            </div>
+
+            <div class="rounded-2xl border border-blue-500/20 bg-slate-900/40 backdrop-blur-sm shadow-xl shadow-blue-950/20 overflow-hidden">
+                <div class="flex justify-between items-center px-5 py-4 border-b border-white/10">
+                    <h2 class="text-lg font-semibold text-white tracking-tight">Accounts</h2>
+                    <button type="button" id="btnToggleArchived" class="text-xs font-medium text-slate-400 hover:text-blue-200 transition-colors">Show Archived Tabs</button>
+                </div>
+
+                <div id="tabsHeader" class="flex gap-2 px-4 py-3 border-b border-white/5 overflow-x-auto bg-slate-950/40"></div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 border-b border-blue-500/15 bg-slate-900/60">
+                    <div class="flex flex-wrap items-center gap-2 min-w-0">
+                        <h2 id="currentTabTitle" class="text-base font-semibold text-slate-200 truncate max-w-[min(100%,28rem)]">Tab Name</h2>
+                        <button type="button" id="btnRenameTab" class="text-xs text-blue-400/90 hover:text-blue-300 hover:underline shrink-0">Rename Tab</button>
+                        <button type="button" id="btnArchiveTab" class="text-xs text-rose-400/90 hover:text-rose-300 hover:underline shrink-0">Archive Tab</button>
+                    </div>
+                    <span id="currentTabCount" class="bg-blue-500/15 text-blue-300 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-blue-500/30 shrink-0">0</span>
+                </div>
+
+                <ul id="accountList" class="max-h-[min(60vh,28rem)] overflow-y-auto p-2 sm:p-3 space-y-2 list-none min-h-[8rem]"></ul>
+            </div>
+        </section>
+
+    </div><!-- /max-width shell -->
+
+    <!-- Edit Tag Modal -->
+    <div id="editTagModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50">
+        <div class="bg-[#1e293b] border border-slate-600 p-6 rounded-lg shadow-xl w-96">
+            <h3 class="text-lg font-bold mb-4 text-slate-100">Move Account to Tab</h3>
+            <p class="text-sm text-slate-400 mb-4" id="editTagEmail"></p>
+            <input type="text" id="editTagInput" class="input-base mb-4 w-full text-slate-100 placeholder:text-slate-500" placeholder="Enter new tab/tag name">
+            <div class="flex justify-end gap-2">
+                <button id="btnCancelEditTag" type="button" class="ctrl-h9 px-4 rounded-lg border border-slate-600 bg-slate-800 text-sm font-medium text-slate-300 hover:bg-slate-700">Cancel</button>
+                <button id="btnSaveEditTag" type="button" class="ctrl-h9 px-4 rounded-lg bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let accounts = [];
+        let currentIndex = -1;
+        let accountListTag = 'Default';
+        let archivedTabs = JSON.parse(localStorage.getItem('archivedTabs') || '[]');
+        let showArchived = false;
+
+        let editingAccountIndex = -1;
+
+        const ui = {
+            tabsHeader: document.getElementById('tabsHeader'),
+            accountList: document.getElementById('accountList'),
+            currentTabTitle: document.getElementById('currentTabTitle'),
+            currentTabCount: document.getElementById('currentTabCount'),
+            btnToggleArchived: document.getElementById('btnToggleArchived'),
+            btnRenameTab: document.getElementById('btnRenameTab'),
+            btnArchiveTab: document.getElementById('btnArchiveTab'),
+            
+            prefix: document.getElementById('prefixInput'),
+            flow: document.getElementById('flowSelect'),
+            browser: document.getElementById('browserSelect'),
+            country: document.getElementById('countrySelect'),
+            addDevice: document.getElementById('addDeviceCheck'),
+            nhbCount: document.getElementById('nhbCountInput'),
+            hbCount: document.getElementById('hbCountInput'),
+            deviceOrgName: document.getElementById('deviceOrgNameInput'),
+            deviceLocationName: document.getElementById('deviceLocationNameInput'),
+            btnCreate: document.getElementById('btnCreate'),
+            btnAddDevicesOnly: document.getElementById('btnAddDevicesOnly'),
+            addDevicesOnlyStatus: document.getElementById('addDevicesOnlyStatus'),
+            bulkInput: document.getElementById('bulkInput'),
+            bulkTagInput: document.getElementById('bulkTagInput'),
+            bulkTagDatalist: document.getElementById('bulkTagDatalist'),
+            btnBulkAdd: document.getElementById('btnBulkAdd'),
+            btnNext: document.getElementById('btnNext'),
+            btnCancel: document.getElementById('btnCancel'),
+            status: document.getElementById('status'),
+
+            editModal: document.getElementById('editTagModal'),
+            editEmail: document.getElementById('editTagEmail'),
+            editInput: document.getElementById('editTagInput'),
+            btnCancelEdit: document.getElementById('btnCancelEditTag'),
+            btnSaveEdit: document.getElementById('btnSaveEditTag'),
+
+            insightEnv: document.getElementById('insightEnvSelect'),
+        };
+
+        (function initBrowserSelect() {
+            const sel = ui.browser;
+            if (!sel) return;
+            const saved = localStorage.getItem('navigatorBrowser');
+            if (saved === 'firefox' || saved === 'chrome') sel.value = saved;
+            sel.addEventListener('change', () => localStorage.setItem('navigatorBrowser', sel.value));
+        })();
+
+        (function initInsightEnvSelect() {
+            const sel = ui.insightEnv;
+            if (!sel) return;
+            const saved = localStorage.getItem('navigatorInsightEnv') || 'pri-qa';
+            function applyEnvVisibility() {
+                const isProd = sel.value === 'prod';
+                const mongo = document.getElementById('mongoSection');
+                if (mongo) mongo.style.display = isProd ? 'none' : '';
+            }
+            const onChange = (key) => {
+                localStorage.setItem('navigatorInsightEnv', key);
+                applyEnvVisibility();
+                try { pruneCurrentIndexIfHidden(); } catch (_) {}
+                try { renderTabs(); } catch (_) {}
+                try { renderList(); } catch (_) {}
+            };
+            if (window.NGEnvManager) {
+                window.NGEnvManager.attach(sel, { initial: saved, onChange });
+            } else {
+                sel.value = saved;
+                sel.addEventListener('change', () => onChange(sel.value));
+            }
+            applyEnvVisibility();
+        })();
+
+        (function initMongoEnvSelect() {
+            const sel = document.getElementById('qaSubInsight');
+            if (!sel || !window.NGEnvManager) return;
+            window.NGEnvManager.attach(sel, { initial: 'pri-qa' });
+        })();
+
+        const createFlowSection = document.getElementById('createFlowSection');
+        const panelWork = document.getElementById('panel-work');
+
+        function applyWorkTab(name) {
+            if (!createFlowSection || !panelWork) return;
+            /* Nav labels swapped vs internal keys: "Devices only" tab = flows, "Signup" = devices */
+            if (name === 'flows') {
+                panelWork.setAttribute('data-work-tab', 'devices');
+                createFlowSection.setAttribute('data-section', 'devices');
+                return;
+            }
+            if (name === 'devices') {
+                panelWork.setAttribute('data-work-tab', 'flows');
+                createFlowSection.setAttribute('data-section', 'signup');
+                return;
+            }
+            if (name === 'combined') {
+                panelWork.setAttribute('data-work-tab', 'combined');
+                createFlowSection.setAttribute('data-section', 'full');
+            }
+        }
+
+        function setMainTab(name) {
+            sessionStorage.setItem('navigatorMainTab', name);
+            document.querySelectorAll('#mainFlowTabs .nav-tab-btn').forEach((b) => {
+                b.classList.toggle('nav-tab-active', b.getAttribute('data-main-tab') === name);
+            });
+            if (name === 'accounts') {
+                document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('tab-active'));
+                const accountsEl = document.getElementById('panel-accounts');
+                accountsEl?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                accountsEl?.classList.add('ring-2', 'ring-blue-400/40');
+                setTimeout(() => accountsEl?.classList.remove('ring-2', 'ring-blue-400/40'), 1400);
+                return;
+            }
+            document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('tab-active'));
+            const map = {
+                home: 'panel-home',
+                flows: 'panel-work',
+                devices: 'panel-work',
+                combined: 'panel-work',
+            };
+            const id = map[name];
+            const el = id ? document.getElementById(id) : null;
+            if (el) el.classList.add('tab-active');
+            if (name === 'flows' || name === 'devices' || name === 'combined') applyWorkTab(name);
+        }
+
+        document.addEventListener(
+            'click',
+            function anvMainFlowTabClick(e) {
+                const btn = e.target.closest('#mainFlowTabs [data-main-tab]');
+                if (!btn) return;
+                e.preventDefault();
+                setMainTab(btn.getAttribute('data-main-tab'));
+            },
+            true
+        );
+
+        document.body.addEventListener('click', (e) => {
+            const j = e.target.closest('[data-jump-tab]');
+            if (!j) return;
+            const tab = j.getAttribute('data-jump-tab');
+            if (tab) setMainTab(tab);
+        });
+
+        // Always land on Home when the navigator opens (last-tab persistence disabled).
+        sessionStorage.removeItem('navigatorMainTab');
+        setMainTab('home');
+
+        function getInsightEnvPayload() {
+            return ui.insightEnv ? ui.insightEnv.value : 'pri-qa';
+        }
+
+        function getBrowserPayload() {
+            return ui.browser ? ui.browser.value : 'firefox';
+        }
+
+        function accountInsightEnv(acc) {
+            if (typeof acc === 'string') return 'pri-qa';
+            const raw = acc && typeof acc.insightEnv === 'string' ? acc.insightEnv.trim().toLowerCase() : '';
+            if (!raw) return 'pri-qa';
+            if (raw === 'prod') return 'prod';
+            return /^[a-z0-9][a-z0-9-]{0,40}$/.test(raw) ? raw : 'pri-qa';
+        }
+
+        function pruneCurrentIndexIfHidden() {
+            if (currentIndex < 0 || currentIndex >= accounts.length) {
+                currentIndex = -1;
+                return;
+            }
+            if (accountInsightEnv(accounts[currentIndex]) !== getInsightEnvPayload()) {
+                currentIndex = -1;
+            }
+        }
+
+        const purchaseAllInOne = document.getElementById('purchaseAllInOne');
+        const purchasePanel = document.getElementById('purchasePanel');
+        const purchaseFullAddr = document.getElementById('purchaseFullAddr');
+        const purchaseAddrBlock = document.getElementById('purchaseAddrBlock');
+        const purchaseBiz = document.getElementById('purchaseBiz');
+        const purchaseBizBlock = document.getElementById('purchaseBizBlock');
+
+        function syncPurchaseAddrBlock() {
+            const on = purchaseFullAddr.checked && purchaseAllInOne.checked;
+            purchaseAddrBlock.classList.toggle('opacity-50', !on);
+            purchaseAddrBlock.classList.toggle('pointer-events-none', !on);
+        }
+        function syncPurchaseBizBlock() {
+            const on = purchaseBiz.checked && purchaseAllInOne.checked;
+            purchaseBizBlock.classList.toggle('opacity-50', !on);
+            purchaseBizBlock.classList.toggle('pointer-events-none', !on);
+        }
+        function updateCreateButtonLabel() {
+            ui.btnCreate.textContent = purchaseAllInOne.checked
+                ? 'All-in-one: create + device + subscribe (~6–15 min)'
+                : 'Create & Add';
+        }
+        purchaseAllInOne.addEventListener('change', () => {
+            const on = purchaseAllInOne.checked;
+            purchasePanel.classList.toggle('hidden', !on);
+            if (on) {
+                ui.addDevice.checked = true;
+                ui.addDevice.disabled = true;
+            } else {
+                ui.addDevice.disabled = false;
+            }
+            syncPurchaseAddrBlock();
+            syncPurchaseBizBlock();
+            updateCreateButtonLabel();
+        });
+        purchaseFullAddr.addEventListener('change', syncPurchaseAddrBlock);
+        purchaseBiz.addEventListener('change', syncPurchaseBizBlock);
+
+        function readNhbHb() {
+            // When "Devices only" tab is active, createFlowSection is hidden — read from the local inputs
+            const devicesOnlyActive = document.getElementById('createFlowSection')?.offsetParent === null;
+            const nhbEl = devicesOnlyActive
+                ? document.getElementById('nhbCountOnlyInput')
+                : (ui.nhbCount || document.getElementById('nhbCountOnlyInput'));
+            const hbEl = devicesOnlyActive
+                ? document.getElementById('hbCountOnlyInput')
+                : (ui.hbCount || document.getElementById('hbCountOnlyInput'));
+            const nhb = Math.max(0, parseInt(nhbEl && nhbEl.value, 10) || 0);
+            const hb  = Math.max(0, parseInt(hbEl  && hbEl.value,  10) || 0);
+            return { nhb, hb, total: nhb + hb };
+        }
+        function deviceContextForPurchase() {
+            const { nhb, hb } = readNhbHb();
+            if (nhb > 0 && hb > 0) return 'mixed';
+            if (hb > 0) return 'HB';
+            return 'NHB';
+        }
+
+        ui.btnAddDevicesOnly.onclick = async () => {
+            const { nhb, hb, total: count } = readNhbHb();
+            const devicesOnlyActive = document.getElementById('createFlowSection')?.offsetParent === null;
+            const deviceOrgName = devicesOnlyActive
+                ? (document.getElementById('deviceOrgOnlyInput')?.value.trim() || '')
+                : (ui.deviceOrgName?.value.trim() || '');
+            const deviceLocationName = devicesOnlyActive
+                ? (document.getElementById('deviceLocationOnlyInput')?.value.trim() || '')
+                : (ui.deviceLocationName?.value.trim() || '');
+            if (count < 1 || count > 1000) {
+                alert('Set NHB and/or HB counts so the total is between 1 and 1000.');
+                return;
+            }
+            if (count > 25 && !confirm(`Add ${count} device(s) (${nhb} NHB, ${hb} HB)? This may take a long time.`)) return;
+            ui.btnAddDevicesOnly.disabled = true;
+            ui.addDevicesOnlyStatus.textContent = `Adding ${count} device(s) (${nhb} NHB, ${hb} HB)…`;
+            try {
+                const res = await fetch('/api/add-devices', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nhbCount: nhb,
+                        hbCount: hb,
+                        deviceOrgName: deviceOrgName || undefined,
+                        deviceLocationName: deviceLocationName || undefined,
+                        insightEnv: getInsightEnvPayload(),
+                        browser: getBrowserPayload(),
+                    }),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    ui.addDevicesOnlyStatus.textContent = '';
+                    alert(data.error || res.statusText || String(res.status));
+                    return;
+                }
+                ui.addDevicesOnlyStatus.textContent = `Done: added ${data.added} device(s).`;
+            } catch (e) {
+                ui.addDevicesOnlyStatus.textContent = '';
+                alert(e.message);
+            } finally {
+                ui.btnAddDevicesOnly.disabled = false;
+            }
+        };
+
+        function buildPurchasePayload() {
+            if (!purchaseAllInOne.checked) return undefined;
+            const fillFull = purchaseFullAddr.checked;
+            const body = {
+                enabled: true,
+                plan: document.getElementById('purchasePlan').value,
+                qty: parseInt(document.getElementById('purchaseQty').value, 10) || 1,
+                fillFullAddress: fillFull,
+                address: fillFull
+                    ? {
+                          countryCode: document.getElementById('purchaseAddrCountry').value,
+                          addr1: document.getElementById('purchaseAddr1').value.trim(),
+                          addr2: document.getElementById('purchaseAddr2').value.trim(),
+                          city: document.getElementById('purchaseCity').value.trim(),
+                          state: document.getElementById('purchaseState').value.trim(),
+                          zip: document.getElementById('purchaseZip').value.trim(),
+                      }
+                    : {
+                          countryCode: document.getElementById('purchaseAddrCountry').value,
+                          zip: document.getElementById('purchaseZip').value.trim(),
+                      },
+                businessPurchase: purchaseBiz.checked,
+                businessId: document.getElementById('purchaseBizId').value.trim(),
+                taxIdTypeHint: document.getElementById('purchaseTaxHint').value.trim(),
+                cardholder: document.getElementById('purchaseCardholder').value.trim() || undefined,
+                card: {
+                    number: (document.getElementById('purchaseCardNumber').value || '').replace(/\s/g, '') || '4242424242424242',
+                    expiry: document.getElementById('purchaseCardExpiry').value || '12/30',
+                    cvc: document.getElementById('purchaseCardCvc').value || '123',
+                },
+                deviceContext: deviceContextForPurchase(),
+                maxWaitMs: parseInt(document.getElementById('purchaseMaxWait').value, 10) || 360000,
+            };
+            if (!body.businessPurchase) {
+                delete body.businessId;
+                delete body.taxIdTypeHint;
+            }
+            return body;
+        }
+
+        ui.btnToggleArchived.onclick = () => {
+            showArchived = !showArchived;
+            ui.btnToggleArchived.textContent = showArchived ? "Hide Archived Tabs" : "Show Archived Tabs";
+            renderTabs();
+            renderList();
+        };
+
+        ui.btnRenameTab.onclick = async () => {
+            const newName = prompt(`Rename tab "${accountListTag}" to:`, accountListTag);
+            if (!newName || newName === accountListTag) return;
+
+            const env = getInsightEnvPayload();
+            for (let i = 0; i < accounts.length; i++) {
+                const acc = accounts[i];
+                const tag = typeof acc === 'string' ? 'Default' : (acc.tag || 'Default');
+                if (tag === accountListTag && accountInsightEnv(acc) === env) {
+                    await fetch(`/api/accounts/${i}/tag`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tag: newName })
+                    });
+                }
+            }
+            
+            // Update archived list if needed
+            if (archivedTabs.includes(accountListTag)) {
+                archivedTabs = archivedTabs.filter(t => t !== accountListTag);
+                archivedTabs.push(newName);
+                localStorage.setItem('archivedTabs', JSON.stringify(archivedTabs));
+            }
+
+            accountListTag = newName;
+            await fetchAccounts();
+        };
+
+        ui.btnCancelEdit.onclick = () => {
+            ui.editModal.classList.add('hidden');
+        };
+
+        ui.btnSaveEdit.onclick = async () => {
+            const newTag = ui.editInput.value.trim() || 'Default';
+            if (editingAccountIndex >= 0) {
+                await fetch(`/api/accounts/${editingAccountIndex}/tag`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tag: newTag })
+                });
+                ui.editModal.classList.add('hidden');
+                accountListTag = newTag; // Switch to the new tab
+                await fetchAccounts();
+            }
+        };
+
+        function openEditModal(event, index) {
+            event.stopPropagation();
+            editingAccountIndex = index;
+            const acc = accounts[index];
+            const email = typeof acc === 'string' ? acc : acc.email;
+            const tag = typeof acc === 'string' ? 'Default' : (acc.tag || 'Default');
+            
+            ui.editEmail.textContent = email;
+            ui.editInput.value = tag;
+            ui.editModal.classList.remove('hidden');
+            ui.editInput.focus();
+        }
+
+        async function fetchAccounts() {
+            const res = await fetch('/api/accounts');
+            accounts = await res.json();
+            pruneCurrentIndexIfHidden();
+            refreshBulkTagDatalist();
+            renderTabs();
+            renderList();
+        }
+
+        function accountsInCurrentEnv() {
+            const env = getInsightEnvPayload();
+            return accounts.filter((a) => accountInsightEnv(a) === env);
+        }
+
+        function getBulkTagValue() {
+            const raw = ui.bulkTagInput && ui.bulkTagInput.value != null ? ui.bulkTagInput.value.trim() : '';
+            return raw || 'Bulk Added';
+        }
+
+        function refreshBulkTagDatalist() {
+            if (!ui.bulkTagDatalist) return;
+            const seen = new Set(['Default', 'Bulk Added']);
+            accounts.forEach((a) => {
+                const t = typeof a === 'string' ? 'Default' : a.tag || 'Default';
+                seen.add(t);
+            });
+            ui.bulkTagDatalist.innerHTML = '';
+            [...seen]
+                .sort((x, y) => x.localeCompare(y))
+                .forEach((t) => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    ui.bulkTagDatalist.appendChild(opt);
+                });
+        }
+
+        (function initBulkTagInput() {
+            const saved = localStorage.getItem('navigatorBulkTag');
+            if (saved && document.getElementById('bulkTagInput')) {
+                document.getElementById('bulkTagInput').value = saved;
+            }
+        })();
+
+        function renderTabs() {
+            ui.tabsHeader.innerHTML = '';
+
+            const env = getInsightEnvPayload();
+            const inEnv = accountsInCurrentEnv();
+            let tags = [
+                ...new Set(
+                    inEnv.map((a) => (typeof a === 'string' ? 'Default' : a.tag || 'Default'))
+                ),
+            ];
+
+            if (inEnv.length === 0) {
+                ui.tabsHeader.innerHTML =
+                    '<span class="text-sm text-slate-500 italic px-2 py-2">No accounts for this portal — switch <strong>Insight portal</strong> above (e.g. pri-qa) to see your list.</span>';
+                ui.currentTabTitle.textContent = '—';
+                ui.btnArchiveTab.textContent = 'Archive Tab';
+                ui.btnArchiveTab.onclick = () => {};
+                return;
+            }
+
+            if (!tags.includes(accountListTag)) accountListTag = tags[0];
+
+            tags.forEach(tag => {
+                const isArchived = archivedTabs.includes(tag);
+                if (isArchived && !showArchived && tag !== accountListTag) return;
+
+                const btn = document.createElement('button');
+                const isActive = tag === accountListTag;
+                
+                btn.className = `inline-flex items-center min-h-[2.25rem] px-4 font-medium text-sm rounded-t-lg border-b-2 whitespace-nowrap transition-colors ${
+                    isActive
+                        ? 'border-blue-400 text-blue-100 bg-blue-500/10 shadow-[inset_0_0_0_1px_rgba(59,130,246,.2)]'
+                        : 'border-transparent text-slate-500 hover:text-blue-100/90 hover:border-blue-500/25'
+                } ${isArchived ? 'italic opacity-70' : ''}`;
+                
+                btn.textContent = tag + (isArchived ? ' (Archived)' : '');
+                btn.onclick = () => {
+                    accountListTag = tag;
+                    renderTabs();
+                    renderList();
+                };
+                
+                ui.tabsHeader.appendChild(btn);
+            });
+
+            ui.currentTabTitle.textContent = accountListTag + (archivedTabs.includes(accountListTag) ? ' [Archived]' : '');
+            ui.btnArchiveTab.textContent = archivedTabs.includes(accountListTag) ? 'Unarchive Tab' : 'Archive Tab';
+            ui.btnArchiveTab.onclick = () => {
+                if (archivedTabs.includes(accountListTag)) {
+                    archivedTabs = archivedTabs.filter((t) => t !== accountListTag);
+                } else {
+                    archivedTabs.push(accountListTag);
+                    const env = getInsightEnvPayload();
+                    const tagSet = [
+                        ...new Set(
+                            accounts
+                                .filter((a) => accountInsightEnv(a) === env)
+                                .map((a) => (typeof a === 'string' ? 'Default' : a.tag || 'Default'))
+                        ),
+                    ];
+                    const visibleTags = tagSet.filter((t) => !archivedTabs.includes(t));
+                    accountListTag =
+                        visibleTags.length > 0 ? visibleTags[0] : tagSet[0] || accountListTag;
+                }
+                localStorage.setItem('archivedTabs', JSON.stringify(archivedTabs));
+                renderTabs();
+                renderList();
+            };
+        }
+
+        function sourceLabel(acc) {
+            if (typeof acc === 'string') return 'Legacy';
+            const s = acc.source || 'legacy';
+            const m = {
+                navigator: 'Navigator',
+                stripe_preview: 'Stripe preview',
+                bulk_import: 'Bulk import',
+                legacy: 'Legacy',
+            };
+            return m[s] || s;
+        }
+
+        function formatProvisionLine(acc) {
+            if (typeof acc === 'string') return '—';
+            const p = acc.provisionProfile;
+            if (!p || typeof p !== 'object') {
+                if (acc.source === 'stripe_preview') return 'Stripe matrix / preview';
+                return '—';
+            }
+            const bits = [];
+            if (p.signupFlow) bits.push(p.signupFlow === 'old' ? 'Classic' : 'Auth-stg');
+            if (p.country) bits.push(String(p.country));
+            if (p.addDevice) {
+                if (p.deviceNhb != null || p.deviceHb != null) {
+                    const nn = Number(p.deviceNhb) || 0;
+                    const hh = Number(p.deviceHb) || 0;
+                    const parts = [];
+                    if (nn) parts.push(`${nn} NHB`);
+                    if (hh) parts.push(`${hh} HB`);
+                    bits.push(parts.length ? parts.join(', ') : `Devices ×${p.deviceCount != null ? p.deviceCount : 1}`);
+                } else {
+                    bits.push(`Devices ×${p.deviceCount != null ? p.deviceCount : 1}`);
+                }
+            } else bits.push('No devices');
+            if (p.stripePurchase) bits.push('Stripe');
+            else if (p.mode === 'stripe_preview_bootstrap') bits.push('Preview bootstrap');
+            return bits.join(' · ') || '—';
+        }
+
+        function formatDateAdded(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+            } catch {
+                return '—';
+            }
+        }
+
+        function renderList() {
+            ui.accountList.innerHTML = '';
+            let count = 0;
+
+            const env = getInsightEnvPayload();
+            const inEnv = accountsInCurrentEnv();
+            if (inEnv.length === 0) {
+                ui.currentTabCount.textContent = '0';
+                ui.accountList.innerHTML =
+                    '<li class="rounded-xl border border-blue-500/15 bg-slate-900/40 backdrop-blur-sm p-5 text-slate-400 text-center text-sm">No accounts are registered for <strong class="text-slate-200">' +
+                    env +
+                    '</strong>. Choose another environment in the dropdown above to see existing accounts.</li>';
+                return;
+            }
+
+            accounts.forEach((acc, index) => {
+                const email = typeof acc === 'string' ? acc : acc.email;
+                const tag = typeof acc === 'string' ? 'Default' : (acc.tag || 'Default');
+
+                if (accountInsightEnv(acc) !== env) return;
+                if (tag !== accountListTag) return;
+                count++;
+
+                const added = typeof acc === 'string' ? null : acc.dateAdded;
+                const src = sourceLabel(acc);
+                const cfg = formatProvisionLine(acc);
+                
+                const li = document.createElement('li');
+                li.className = [
+                    'rounded-xl border p-4 transition cursor-pointer',
+                    'border-blue-500/15 bg-slate-900/40 backdrop-blur-sm',
+                    'hover:border-blue-500/30 hover:bg-slate-800/60',
+                    index === currentIndex ? 'border-blue-500/50 bg-slate-800/70 ring-1 ring-blue-500/20' : '',
+                ]
+                    .filter(Boolean)
+                    .join(' ');
+                li.innerHTML = `
+                    <div class="flex justify-between gap-4">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="text-sm font-semibold text-white truncate flex-1 min-w-0" title="${email.replace(/"/g, '&quot;')}">${email}</div>
+                                <button type="button" class="ctrl-h9 shrink-0 rounded-md border border-slate-600 bg-slate-800/90 px-2 text-xs font-medium text-blue-200 hover:border-blue-500/40 hover:bg-slate-700/90" title="Copy email" onclick="copyAccountEmail(event, ${index})">Copy</button>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-400 space-y-1">
+                                <div>Added: ${formatDateAdded(added)}</div>
+                                <div>Source: <span class="text-blue-300">${src}</span></div>
+                                <div>Config: ${cfg}</div>
+                            </div>
+                            <div class="mt-2 flex gap-2 items-center flex-wrap">
+                                <span class="px-2 py-0.5 text-xs rounded-full bg-blue-950/50 text-blue-200 border border-blue-500/25">${tag}</span>
+                                <button type="button" class="text-xs text-slate-400 hover:text-blue-200" onclick="openEditModal(event, ${index})">Move to tab…</button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2 shrink-0">
+                            <button type="button" class="btn-secondary" onclick="launchAccount(event, ${index})">Open</button>
+                            <button type="button" class="btn-danger" onclick="deleteAccount(event, ${index})">Delete</button>
+                        </div>
+                    </div>
+                `;
+                li.addEventListener('click', (ev) => {
+                    if (ev.target.closest('button')) return;
+                    currentIndex = index;
+                    renderList();
+                });
+                
+                ui.accountList.appendChild(li);
+            });
+            
+            ui.currentTabCount.textContent = count;
+            
+            if (count === 0) {
+                ui.accountList.innerHTML =
+                    '<li class="rounded-xl border border-blue-500/15 bg-slate-900/40 backdrop-blur-sm p-5 text-slate-400 text-center text-sm">No accounts for this Insight environment in this tab.</li>';
+            }
+        }
+
+        async function copyAccountEmail(event, index) {
+            if (event) event.stopPropagation();
+            if (index < 0 || index >= accounts.length) return;
+            const acc = accounts[index];
+            const em = typeof acc === 'string' ? acc : acc.email;
+            try {
+                await navigator.clipboard.writeText(em);
+            } catch {
+                const ta = document.createElement('textarea');
+                ta.value = em;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                } finally {
+                    ta.remove();
+                }
+            }
+            const btn = event.currentTarget;
+            if (btn && btn.tagName === 'BUTTON') {
+                const prev = btn.textContent;
+                btn.textContent = 'Copied';
+                btn.disabled = true;
+                setTimeout(() => {
+                    btn.textContent = prev;
+                    btn.disabled = false;
+                }, 1600);
+            }
+        }
+
+        async function launchAccount(event, index) {
+            if (event) event.stopPropagation();
+            if (index < 0 || index >= accounts.length) return;
+            
+            currentIndex = index;
+            renderList();
+            
+            const acc = accounts[currentIndex];
+            const email = typeof acc === 'string' ? acc : acc.email;
+            
+            ui.status.textContent = `Launching ${email}...`;
+            ui.btnNext.disabled = true;
+            
+            const res = await fetch('/api/launch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, insightEnv: getInsightEnvPayload(), browser: getBrowserPayload() }),
+            });
+            
+            if (res.ok) {
+                ui.status.textContent = `Currently viewing: ${email}`;
+            } else {
+                const errBody = await res.json().catch(() => ({}));
+                ui.status.textContent = errBody.error || `Error launching ${email}`;
+                if (errBody.error) alert(errBody.error);
+            }
+            ui.btnNext.disabled = false;
+        }
+
+        async function deleteAccount(event, index) {
+            event.stopPropagation();
+            if (!confirm(`Are you sure you want to delete ${typeof accounts[index] === 'string' ? accounts[index] : accounts[index].email}?`)) return;
+            
+            const res = await fetch(`/api/accounts/${index}`, { method: 'DELETE' });
+            if (res.ok) {
+                const data = await res.json();
+                accounts = data.accounts;
+                if (currentIndex === index) currentIndex = -1;
+                else if (currentIndex > index) currentIndex--;
+                renderTabs();
+                renderList();
+            }
+        }
+
+        const btnCreateSignupOnly = document.getElementById('btnCreateSignupOnly');
+        if (btnCreateSignupOnly) {
+            btnCreateSignupOnly.addEventListener('click', async () => {
+                const prefix = ui.prefix.value.trim();
+                const flow = ui.flow.value;
+                const country = ui.country.value;
+                if (!prefix) {
+                    alert('Enter a mailbox prefix.');
+                    return;
+                }
+                btnCreateSignupOnly.disabled = true;
+                const prev = btnCreateSignupOnly.textContent;
+                btnCreateSignupOnly.textContent = 'Creating…';
+                ui.status.textContent = 'Creating account (signup only)…';
+                try {
+                    const res = await fetch('/api/accounts', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prefix,
+                            flow,
+                            country,
+                            addDevice: false,
+                            deviceCount: 1,
+                            insightEnv: getInsightEnvPayload(),
+                            browser: getBrowserPayload(),
+                        }),
+                    });
+                    const resultData = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        alert(`Error: ${resultData.error || res.statusText || String(res.status)}`);
+                        ui.status.textContent = 'Error creating account';
+                        return;
+                    }
+                    if (resultData.success) {
+                        accounts = resultData.accounts;
+                        ui.prefix.value = '';
+                        const newEmail = resultData.email;
+                        currentIndex = accounts.findIndex((a) => (typeof a === 'string' ? a : a.email) === newEmail);
+                        if (currentIndex >= 0) {
+                            await fetch(`/api/accounts/${currentIndex}/tag`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ tag: accountListTag }),
+                            });
+                            await fetchAccounts();
+                        } else {
+                            renderTabs();
+                            renderList();
+                        }
+                        ui.status.textContent = `Currently viewing: ${newEmail}`;
+                    }
+                } catch (e) {
+                    alert(e.message);
+                    ui.status.textContent = 'Error';
+                } finally {
+                    btnCreateSignupOnly.disabled = false;
+                    btnCreateSignupOnly.textContent = prev;
+                }
+            });
+        }
+
+        ui.btnCreate.onclick = async () => {
+            const prefix = ui.prefix.value.trim();
+            const flow = ui.flow.value;
+            const country = ui.country.value;
+            const addDevice = ui.addDevice.checked;
+            const { nhb, hb, total: deviceTotal } = readNhbHb();
+            const deviceOrgName = ui.deviceOrgName.value.trim();
+            const deviceLocationName = ui.deviceLocationName.value.trim();
+            const purchase = buildPurchasePayload();
+            
+            if (!prefix) return;
+            if (addDevice && deviceTotal < 1) {
+                alert('When Add device is checked, set at least one NHB or HB (total must be ≥ 1).');
+                return;
+            }
+            
+            ui.btnCreate.disabled = true;
+            const allInOne = !!purchase;
+            ui.btnCreate.textContent = allInOne ? 'Running all-in-one… (~6–15 min)' : 'Creating... (~60s)';
+            ui.status.textContent = allInOne
+                ? 'Signup → verify → onboarding → device → Stripe checkout…'
+                : 'Creating, verifying, and onboarding account...';
+            
+            try {
+                const res = await fetch('/api/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prefix,
+                        flow,
+                        country,
+                        addDevice,
+                        nhbCount: nhb,
+                        hbCount: hb,
+                        deviceOrgName: deviceOrgName || undefined,
+                        deviceLocationName: deviceLocationName || undefined,
+                        insightEnv: getInsightEnvPayload(),
+                        browser: getBrowserPayload(),
+                        purchase,
+                    }),
+                });
+                
+                const resultData = await res.json().catch(() => ({}));
+                
+                if (!res.ok) {
+                    const msg = resultData.error || res.statusText || String(res.status);
+                    alert(`Error: ${msg}`);
+                    ui.status.textContent = 'Error creating account';
+                    return;
+                }
+                
+                if (resultData.success) {
+                    accounts = resultData.accounts;
+                    ui.prefix.value = '';
+                    
+                    const newEmail = resultData.email;
+                    currentIndex = accounts.findIndex(a => (typeof a === 'string' ? a : a.email) === newEmail);
+                    
+                    if (currentIndex >= 0) {
+                        await fetch(`/api/accounts/${currentIndex}/tag`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tag: accountListTag })
+                        });
+                        await fetchAccounts();
+                    } else {
+                        renderTabs();
+                        renderList();
+                    }
+                    
+                    let statusLine = `Currently viewing: ${newEmail}`;
+                    if (resultData.purchase) {
+                        if (resultData.purchase.success) {
+                            statusLine += ' — subscription checkout completed';
+                        } else {
+                            statusLine += ` — purchase failed: ${resultData.purchase.error || 'unknown'}`;
+                            alert(`Account created but Stripe purchase failed:\n${resultData.purchase.error || 'unknown'}`);
+                        }
+                    }
+                    ui.status.textContent = statusLine;
+                }
+            } catch (e) {
+                alert(`Error: ${e.message}`);
+                ui.status.textContent = 'Error creating account';
+            } finally {
+                ui.btnCreate.disabled = false;
+                updateCreateButtonLabel();
+            }
+        };
+
+        ui.btnBulkAdd.onclick = async () => {
+            const text = ui.bulkInput.value.trim();
+            if (!text) return;
+
+            const bulkTagChosen = getBulkTagValue();
+
+            ui.btnBulkAdd.disabled = true;
+            ui.btnBulkAdd.textContent = 'Extracting...';
+
+            const res = await fetch('/api/accounts/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    insightEnv: getInsightEnvPayload(),
+                    browser: getBrowserPayload(),
+                    tag: bulkTagChosen,
+                    text,
+                }),
+            });
+            const data = await res.json();
+
+            accounts = data.accounts;
+            ui.bulkInput.value = '';
+            ui.btnBulkAdd.disabled = false;
+            ui.btnBulkAdd.textContent = 'Extract & Add Emails';
+
+            const u = data.updated || 0;
+            const a = data.added || 0;
+            const appliedTag = (data.tag || bulkTagChosen).trim() || 'Bulk Added';
+            if (a > 0 || u > 0) {
+                accountListTag = appliedTag;
+                localStorage.setItem('navigatorBulkTag', appliedTag);
+                if (ui.bulkTagInput) ui.bulkTagInput.value = appliedTag;
+            }
+            refreshBulkTagDatalist();
+            if (a === 0 && u === 0) {
+                alert(
+                    `No changes: those emails are already in the list with tab "${appliedTag}" and this Insight environment.`
+                );
+            } else {
+                const parts = [];
+                if (a) parts.push(`${a} new`);
+                if (u) parts.push(`${u} updated (tab → "${appliedTag}", portal → current)`);
+                alert(parts.join('; ') + '.');
+            }
+
+            renderTabs();
+            renderList();
+        };
+
+        ui.btnNext.onclick = async () => {
+            // Find next account in the active tab
+            const env = getInsightEnvPayload();
+            const activeAccounts = accounts
+                .map((a, i) => ({ acc: a, index: i }))
+                .filter((item) => {
+                    const tag = typeof item.acc === 'string' ? 'Default' : item.acc.tag || 'Default';
+                    return accountInsightEnv(item.acc) === env && tag === accountListTag;
+                });
+                
+            if (activeAccounts.length === 0) return alert('No accounts in this tab');
+            
+            let nextIndex = -1;
+            const currentActiveIndex = activeAccounts.findIndex(item => item.index === currentIndex);
+            
+            if (currentActiveIndex >= 0 && currentActiveIndex < activeAccounts.length - 1) {
+                nextIndex = activeAccounts[currentActiveIndex + 1].index;
+            } else {
+                nextIndex = activeAccounts[0].index;
+            }
+            
+            await launchAccount(null, nextIndex);
+        };
+
+        ui.btnCancel.onclick = async () => {
+            ui.status.textContent = 'Closing browser...';
+            await fetch('/api/cancel', { method: 'POST' });
+            ui.status.textContent = 'Idle';
+            currentIndex = -1;
+            renderList();
+        };
+
+        async function applyPurchaseAddressForCountry(iso) {
+            if (!iso) return;
+            try {
+                const r = await fetch('/api/stripe-preview-default-address/' + encodeURIComponent(iso));
+                if (!r.ok) return;
+                const a = await r.json();
+                const a1 = document.getElementById('purchaseAddr1');
+                const a2 = document.getElementById('purchaseAddr2');
+                const city = document.getElementById('purchaseCity');
+                const zip = document.getElementById('purchaseZip');
+                const st = document.getElementById('purchaseState');
+                if (a1) a1.value = a.addr1 || '';
+                if (a2) a2.value = a.addr2 || '';
+                if (city) city.value = a.city || '';
+                if (zip) zip.value = a.zip || '';
+                if (st) st.value = a.state || '';
+            } catch (e) {
+                console.error('[Navigator] default address', e);
+            }
+        }
+
+        async function initPurchaseCountryDefaults() {
+            const sel = document.getElementById('purchaseAddrCountry');
+            if (!sel) return;
+            try {
+                const r = await fetch('/api/stripe-checkout-preview/matrix');
+                const j = await r.json();
+                const matrix = j.matrix || [];
+                sel.innerHTML = '';
+                matrix.forEach((m) => {
+                    const opt = document.createElement('option');
+                    opt.value = m.iso2;
+                    opt.textContent = `${m.label} (${m.iso2})`;
+                    sel.appendChild(opt);
+                });
+                sel.value = 'US';
+                await applyPurchaseAddressForCountry('US');
+                sel.addEventListener('change', () => applyPurchaseAddressForCountry(sel.value));
+            } catch (e) {
+                console.error('[Navigator] matrix for purchase country', e);
+                sel.innerHTML = '<option value="US">United States (US)</option>';
+                await applyPurchaseAddressForCountry('US');
+            }
+        }
+
+        (function qaSubscriptionMongoUi() {
+            const out = document.getElementById('qaSubOut');
+            const emailEl = document.getElementById('qaSubEmail');
+            const licOnlyCb = document.getElementById('qaSubLicenseOnly');
+            const devOnlyCb = document.getElementById('qaSubDevicesOnly');
+            function resolveMongoStep() {
+                const sub = !!(licOnlyCb && licOnlyCb.checked);
+                const nhb = !!(devOnlyCb && devOnlyCb.checked);
+                if (sub && !nhb) return 'license-only';
+                if (!sub && nhb) return 'devices-only';
+                return 'all';
+            }
+            function escapeMongoHist(s) {
+                const d = document.createElement('div');
+                d.textContent = s == null ? '' : String(s);
+                return d.innerHTML;
+            }
+            async function loadMongoHistoryTable() {
+                const tbody = document.getElementById('qaSubMongoHistoryBody');
+                const sel = document.getElementById('qaSubInsight');
+                if (!tbody || !sel) return;
+                tbody.innerHTML = '<tr><td colspan="5" class="px-2 py-2 text-slate-500">Loading…</td></tr>';
+                try {
+                    // Use actual selected env — custom/prod envs show empty history
+                    // rather than incorrectly displaying pri-qa entries.
+                    const ie = (sel.value || '').trim().toLowerCase();
+                    const res = await fetch('/api/qa/mongo-db-history?insightEnv=' + encodeURIComponent(ie));
+                    const j = await res.json();
+                    const entries = (j && j.entries) || [];
+                    if (!entries.length) {
+                        tbody.innerHTML =
+                            '<tr><td colspan="5" class="px-2 py-2 text-slate-500">No recorded changes for this environment yet.</td></tr>';
+                        return;
+                    }
+                    const rows = [];
+                    for (const e of entries) {
+                        const st =
+                            e.statusFrom != null && e.statusTo != null
+                                ? `${e.statusFrom} → ${e.statusTo}`
+                                : '—';
+                        rows.push(
+                            '<tr class="border-b border-slate-800/80">' +
+                                '<td class="px-2 py-1.5 text-slate-400 whitespace-nowrap">' +
+                                escapeMongoHist(e.at) +
+                                '</td>' +
+                                '<td class="px-2 py-1.5">' +
+                                escapeMongoHist(e.email) +
+                                '</td>' +
+                                '<td class="px-2 py-1.5">' +
+                                escapeMongoHist(st) +
+                                '</td>' +
+                                '<td class="px-2 py-1.5">' +
+                                escapeMongoHist(e.scope != null ? e.scope : '—') +
+                                '</td>' +
+                                '<td class="px-2 py-1.5 text-slate-500">' +
+                                escapeMongoHist(e.mode != null ? e.mode : '—') +
+                                '</td>' +
+                                '</tr>'
+                        );
+                    }
+                    tbody.innerHTML = rows.join('');
+                } catch (err) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="5" class="px-2 py-2 text-red-400">' +
+                        escapeMongoHist(String(err.message || err)) +
+                        '</td></tr>';
+                }
+            }
+            async function call(mode) {
+                const email = emailEl && emailEl.value.trim();
+                const dry = document.getElementById('qaSubDry');
+                const dryRun = dry && dry.checked;
+                if (!email) {
+                    alert('Enter the account email.');
+                    return;
+                }
+                if (out) {
+                    out.classList.remove('hidden');
+                    out.textContent = '…';
+                }
+                try {
+                    const sel = document.getElementById('qaSubInsight');
+                    const insightEnv = sel ? sel.value : 'pri-qa';
+                    const step = resolveMongoStep();
+                    const bypassValidation = !!(document.getElementById('qaSubBypass') && document.getElementById('qaSubBypass').checked);
+                    const body = { email, mode, dryRun, insightEnv, step, bypassValidation };
+                    async function post() {
+                        const r = await fetch('/api/qa/subscription-grace-expired', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body),
+                        });
+                        return r.json();
+                    }
+                    let j = await post();
+                    // Mongo locked (server requires explicit unlock), URI
+                    // missing, or template still holds CHANGE_ME → open the
+                    // master-unlock modal. Retry the call after a successful unlock.
+                    const needsUnlock =
+                        j && (j.code === 'MONGO_LOCKED' ||
+                              j.code === 'MONGO_URI_MISSING' ||
+                              (typeof j.error === 'string' && /CHANGE_ME/.test(j.error)));
+                    if (needsUnlock) {
+                        await new Promise((resolve) => {
+                            const onClose = () => {
+                                document.getElementById('mongoUnlockModal')
+                                    ?.removeEventListener('transitionend', onClose);
+                                resolve();
+                            };
+                            // Poll until modal closes (since the submit/cancel
+                            // handlers already drive close / unlock state).
+                            const start = Date.now();
+                            const iv = setInterval(async () => {
+                                const mmodal = document.getElementById('mongoUnlockModal');
+                                if (mmodal && mmodal.style.display === 'none') {
+                                    clearInterval(iv);
+                                    resolve();
+                                } else if (Date.now() - start > 120000) {
+                                    clearInterval(iv);
+                                    resolve();
+                                }
+                            }, 250);
+                            // Trigger the modal
+                            document.getElementById('qaSubUnlock')?.click();
+                        });
+                        // Retry the original call; skip if user cancelled.
+                        const statusRes = await fetch('/api/mongo/unlock-status');
+                        const statusJ = await statusRes.json().catch(() => ({}));
+                        if (statusJ && Array.isArray(statusJ.unlocked) && statusJ.unlocked.includes(insightEnv)) {
+                            j = await post();
+                        }
+                    }
+                    if (out) out.textContent = JSON.stringify(j, null, 2);
+                    loadMongoHistoryTable();
+                } catch (e) {
+                    if (out) out.textContent = String(e.message || e);
+                }
+            }
+            document.getElementById('qaSubGrace')?.addEventListener('click', () => call('grace'));
+            document.getElementById('qaSubExpired')?.addEventListener('click', () => call('expired'));
+            document.getElementById('qaSubActive')?.addEventListener('click', () => call('active'));
+            document.getElementById('qaSubInsight')?.addEventListener('change', () => {
+                loadMongoHistoryTable();
+                refreshUnlockStatus();
+            });
+
+            // ── Unlock button: set Mongo password in memory, refresh lock indicator ──
+            async function refreshUnlockStatus() {
+                const btn = document.getElementById('qaSubUnlock');
+                const label = document.getElementById('qaSubUnlockLabel');
+                const sel = document.getElementById('qaSubInsight');
+                if (!btn || !label || !sel) return;
+                const env = (sel.value || '').trim().toLowerCase();
+                try {
+                    const res = await fetch('/api/mongo/unlock-status');
+                    const j = await res.json();
+                    const unlocked = (j && Array.isArray(j.unlocked) ? j.unlocked : []).includes(env);
+                    if (unlocked) {
+                        btn.firstChild.nodeValue = '🔓 ';
+                        label.textContent = `Unlocked (${env})`;
+                        btn.classList.remove('border-cyan-500/40', 'bg-cyan-950/40', 'text-cyan-100', 'hover:bg-cyan-900/50');
+                        btn.classList.add('border-emerald-500/40', 'bg-emerald-950/40', 'text-emerald-100', 'hover:bg-emerald-900/50');
+                    } else {
+                        btn.firstChild.nodeValue = '🔒 ';
+                        label.textContent = `Unlock Mongo (${env})`;
+                        btn.classList.add('border-cyan-500/40', 'bg-cyan-950/40', 'text-cyan-100', 'hover:bg-cyan-900/50');
+                        btn.classList.remove('border-emerald-500/40', 'bg-emerald-950/40', 'text-emerald-100', 'hover:bg-emerald-900/50');
+                    }
+                } catch (_) { /* ignore */ }
+            }
+            // ── Master-unlock modal controls ──
+            const modal = document.getElementById('mongoUnlockModal');
+            const pwdInput = document.getElementById('mongoUnlockPwd');
+            const eyeBtn = document.getElementById('mongoUnlockEye');
+            const errBox = document.getElementById('mongoUnlockErr');
+            const cancelBtn = document.getElementById('mongoUnlockCancel');
+            const submitBtn = document.getElementById('mongoUnlockSubmit');
+
+            function openUnlockModal() {
+                if (!modal) return;
+                errBox.style.display = 'none';
+                errBox.textContent = '';
+                pwdInput.value = '';
+                pwdInput.type = 'password';
+                eyeBtn.textContent = '👁';
+                modal.style.display = 'flex';
+                setTimeout(() => pwdInput.focus(), 50);
+            }
+            function closeUnlockModal() { if (modal) modal.style.display = 'none'; }
+            eyeBtn?.addEventListener('click', () => {
+                const show = pwdInput.type === 'password';
+                pwdInput.type = show ? 'text' : 'password';
+                eyeBtn.textContent = show ? '🙈' : '👁';
+            });
+            cancelBtn?.addEventListener('click', closeUnlockModal);
+            modal?.addEventListener('click', (e) => { if (e.target === modal) closeUnlockModal(); });
+            pwdInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitBtn?.click(); });
+
+            async function submitMasterUnlock() {
+                const pwd = (pwdInput.value || '').trim();
+                if (!pwd) {
+                    errBox.textContent = 'Password required.';
+                    errBox.style.display = '';
+                    return;
+                }
+                // Include any custom envs stored client-side so the server unlocks them too.
+                const custom = (window.NGEnvManager && window.NGEnvManager.loadCustom() || []).map((e) => e.key);
+                submitBtn.disabled = true;
+                try {
+                    const r = await fetch('/api/mongo/unlock-all', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd, envs: custom }),
+                    });
+                    const j = await r.json();
+                    if (!j || !j.ok) {
+                        errBox.textContent = (j && j.error) || 'Unlock failed.';
+                        errBox.style.display = '';
+                        return;
+                    }
+                    closeUnlockModal();
+                    refreshUnlockStatus();
+                } catch (e) {
+                    errBox.textContent = e.message || 'Unlock failed.';
+                    errBox.style.display = '';
+                } finally {
+                    submitBtn.disabled = false;
+                }
+            }
+            submitBtn?.addEventListener('click', submitMasterUnlock);
+            document.getElementById('qaSubUnlock')?.addEventListener('click', openUnlockModal);
+
+            loadMongoHistoryTable();
+            refreshUnlockStatus();
+        })();
+
+        // Init
+        initPurchaseCountryDefaults();
+        fetchAccounts();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,886 @@
+{
+	"countryList": [
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Afghanistan",
+			"isoCode": "4",
+			"countryCode": "AF"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Armenia",
+			"isoCode": "51",
+			"countryCode": "AM"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Algeria",
+			"isoCode": "12",
+			"countryCode": "DZ"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Argentina",
+			"isoCode": "32",
+			"countryCode": "AR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Azerbaijan",
+			"isoCode": "31",
+			"countryCode": "AZ"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Bahamas",
+			"isoCode": "44",
+			"countryCode": "BS"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Bangladesh",
+			"isoCode": "50",
+			"countryCode": "BD"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Belarus",
+			"isoCode": "112",
+			"countryCode": "BY"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Belgium",
+			"isoCode": "56",
+			"countryCode": "BE"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "French Guiana",
+			"isoCode": "254",
+			"countryCode": "GF"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Guadeloupe",
+			"isoCode": "312",
+			"countryCode": "GP"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Iceland",
+			"isoCode": "352",
+			"countryCode": "IS"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Liechtenstein",
+			"isoCode": "438",
+			"countryCode": "LI"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Lithuania",
+			"isoCode": "440",
+			"countryCode": "LT"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Luxembourg",
+			"isoCode": "442",
+			"countryCode": "LU"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Martinique",
+			"isoCode": "474",
+			"countryCode": "MQ"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Monaco",
+			"isoCode": "492",
+			"countryCode": "MC"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Pakistan",
+			"isoCode": "586",
+			"countryCode": "PK"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Philippines",
+			"isoCode": "608",
+			"countryCode": "PH"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Qatar",
+			"isoCode": "634",
+			"countryCode": "QA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Romania",
+			"isoCode": "642",
+			"countryCode": "RO"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Saudi Arabia",
+			"isoCode": "682",
+			"countryCode": "SA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Slovenia",
+			"isoCode": "705",
+			"countryCode": "SI"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Sweden",
+			"isoCode": "752",
+			"countryCode": "SE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "UAE",
+			"isoCode": "784",
+			"countryCode": "AE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Venezuela",
+			"isoCode": "862",
+			"countryCode": "VE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Vietnam",
+			"isoCode": "704",
+			"countryCode": "VN"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Kazakhstan",
+			"isoCode": "398",
+			"countryCode": "KZ"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Montenegro",
+			"isoCode": "499",
+			"countryCode": "ME"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Bahrain",
+			"isoCode": "48",
+			"countryCode": "BH"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Canada",
+			"isoCode": "124",
+			"countryCode": "CA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "China",
+			"isoCode": "156",
+			"countryCode": "CN"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Costa Rica",
+			"isoCode": "188",
+			"countryCode": "CR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Denmark",
+			"isoCode": "208",
+			"countryCode": "DK"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Egypt",
+			"isoCode": "818",
+			"countryCode": "EG"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "El Salvador",
+			"isoCode": "222",
+			"countryCode": "SV"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "France",
+			"isoCode": "250",
+			"countryCode": "FR"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Gibraltar",
+			"isoCode": "292",
+			"countryCode": "GI"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Honduras",
+			"isoCode": "340",
+			"countryCode": "HN"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Hungary",
+			"isoCode": "348",
+			"countryCode": "HU"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "India",
+			"isoCode": "356",
+			"countryCode": "IN"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Indonesia",
+			"isoCode": "360",
+			"countryCode": "ID"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Iran",
+			"isoCode": "364",
+			"countryCode": "IR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Ireland",
+			"isoCode": "372",
+			"countryCode": "IE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Italy",
+			"isoCode": "380",
+			"countryCode": "IT"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Jamaica",
+			"isoCode": "388",
+			"countryCode": "JM"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Japan",
+			"isoCode": "392",
+			"countryCode": "JP"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Jordan",
+			"isoCode": "400",
+			"countryCode": "JO"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Macedonia",
+			"isoCode": "807",
+			"countryCode": "MK"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Malta",
+			"isoCode": "470",
+			"countryCode": "MT"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Netherlands",
+			"isoCode": "528",
+			"countryCode": "NL"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Nigeria",
+			"isoCode": "566",
+			"countryCode": "NG"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Panama",
+			"isoCode": "591",
+			"countryCode": "PA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Portugal",
+			"isoCode": "620",
+			"countryCode": "PT"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Russia",
+			"isoCode": "643",
+			"countryCode": "RU"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "San Marino",
+			"isoCode": "674",
+			"countryCode": "SM"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Thailand",
+			"isoCode": "764",
+			"countryCode": "TH"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "UK",
+			"isoCode": "826",
+			"countryCode": "GB"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Ukraine",
+			"isoCode": "804",
+			"countryCode": "UA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Uruguay",
+			"isoCode": "858",
+			"countryCode": "UY"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Vatican City",
+			"isoCode": "336",
+			"countryCode": "VA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Zimbabwe",
+			"isoCode": "716",
+			"countryCode": "ZW"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Kenya",
+			"isoCode": "404",
+			"countryCode": "KE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Nicaragua",
+			"isoCode": "558",
+			"countryCode": "NI"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Norway",
+			"isoCode": "578",
+			"countryCode": "NO"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Yemen",
+			"isoCode": "887",
+			"countryCode": "YE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Mexico",
+			"isoCode": "484",
+			"countryCode": "MX"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Netherlands Antilles",
+			"isoCode": "530",
+			"countryCode": "AN"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Brazil",
+			"isoCode": "76",
+			"countryCode": "BR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Czech Republic",
+			"isoCode": "203",
+			"countryCode": "CZ"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Ecuador",
+			"isoCode": "218",
+			"countryCode": "EC"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Estonia",
+			"isoCode": "233",
+			"countryCode": "EE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Finland",
+			"isoCode": "246",
+			"countryCode": "FI"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "French Polynesia",
+			"isoCode": "258",
+			"countryCode": "PF"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Guam",
+			"isoCode": "316",
+			"countryCode": "GU"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Guatemala",
+			"isoCode": "320",
+			"countryCode": "GT"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Israel",
+			"isoCode": "376",
+			"countryCode": "IL"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Moldova",
+			"isoCode": "498",
+			"countryCode": "MD"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Oman",
+			"isoCode": "512",
+			"countryCode": "OM"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Puerto Rico",
+			"isoCode": "630",
+			"countryCode": "PR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Singapore",
+			"isoCode": "702",
+			"countryCode": "SG"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "South Africa",
+			"isoCode": "710",
+			"countryCode": "ZA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Spain",
+			"isoCode": "724",
+			"countryCode": "ES"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Switzerland",
+			"isoCode": "756",
+			"countryCode": "CH"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "United States of America",
+			"isoCode": "840",
+			"countryCode": "US"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "United States Virgin Island",
+			"isoCode": "850",
+			"countryCode": "VI"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Brunei Darussalam",
+			"isoCode": "96",
+			"countryCode": "BN"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Korea Republic",
+			"isoCode": "410",
+			"countryCode": "KR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Macau",
+			"isoCode": "446",
+			"countryCode": "MO"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Serbia",
+			"isoCode": "688",
+			"countryCode": "RS"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Tunisia",
+			"isoCode": "788",
+			"countryCode": "TN"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Albania",
+			"isoCode": "8",
+			"countryCode": "AL"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Andorra",
+			"isoCode": "20",
+			"countryCode": "AD"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Australia",
+			"isoCode": "5000",
+			"countryCode": "AU"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Austria",
+			"isoCode": "40",
+			"countryCode": "AT"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Bosnia & Herzegovina",
+			"isoCode": "70",
+			"countryCode": "BA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Bulgaria",
+			"isoCode": "100",
+			"countryCode": "BG"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Chile",
+			"isoCode": "152",
+			"countryCode": "CL"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Colombia",
+			"isoCode": "170",
+			"countryCode": "CO"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Croatia",
+			"isoCode": "191",
+			"countryCode": "HR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Cyprus",
+			"isoCode": "196",
+			"countryCode": "CY"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Dominican Republic",
+			"isoCode": "214",
+			"countryCode": "DO"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Georgia",
+			"isoCode": "268",
+			"countryCode": "GE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Germany",
+			"isoCode": "276",
+			"countryCode": "DE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Greece",
+			"isoCode": "300",
+			"countryCode": "GR"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Greenland",
+			"isoCode": "304",
+			"countryCode": "GL"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Hong Kong",
+			"isoCode": "344",
+			"countryCode": "HK"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Iraq",
+			"isoCode": "368",
+			"countryCode": "IQ"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Latvia",
+			"isoCode": "428",
+			"countryCode": "LV"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Malaysia",
+			"isoCode": "458",
+			"countryCode": "MY"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Mauritius",
+			"isoCode": "480",
+			"countryCode": "MU"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Morocco",
+			"isoCode": "504",
+			"countryCode": "MA"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "New Zealand",
+			"isoCode": "554",
+			"countryCode": "NZ"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Peru",
+			"isoCode": "604",
+			"countryCode": "PE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Poland",
+			"isoCode": "616",
+			"countryCode": "PL"
+		},
+		{
+			"isWirelessRegion": "0",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Reunion",
+			"isoCode": "638",
+			"countryCode": "RE"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": true,
+			"countryName": "Slovakia",
+			"isoCode": "703",
+			"countryCode": "SK"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Taiwan",
+			"isoCode": "158",
+			"countryCode": "TW"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Trinidad and Tobago",
+			"isoCode": "780",
+			"countryCode": "TT"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Turkey",
+			"isoCode": "792",
+			"countryCode": "TR"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Belize",
+			"isoCode": "84",
+			"countryCode": "BZ"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Bolivia",
+			"isoCode": "68",
+			"countryCode": "BO"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Kuwait",
+			"isoCode": "414",
+			"countryCode": "KW"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Lebanon",
+			"isoCode": "422",
+			"countryCode": "LB"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Paraguay",
+			"isoCode": "600",
+			"countryCode": "PY"
+		},
+		{
+			"isWirelessRegion": "1",
+			"isSubscriptionPymtSupported": false,
+			"countryName": "Sri Lanka",
+			"isoCode": "144",
+			"countryCode": "LK"
+		}
+	]
+}

@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E2E Subscription Testing - Live Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+    .pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; }
+    .badge { padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; }
+    .badge-passed { background: #065f46; color: #6ee7b7; }
+    .badge-failed { background: #7f1d1d; color: #fca5a5; }
+    .badge-running { background: #1e3a5f; color: #93c5fd; }
+    .badge-pending { background: #374151; color: #9ca3af; }
+    .badge-skipped { background: #44403c; color: #d6d3d1; }
+    .progress-bar { height: 8px; border-radius: 4px; background: #334155; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .ws-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .ws-connected { background: #10b981; }
+    .ws-disconnected { background: #ef4444; }
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 50; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .lightbox img { max-width: 95vw; max-height: 95vh; border-radius: 8px; }
+    .test-row { cursor: pointer; transition: background 0.2s; }
+    .test-row:hover { background: #1e293b; }
+    .test-row.expanded { background: #172033; }
+    .detail-panel { display: none; background: #0d1526; border-top: 1px solid #1e293b; }
+    .detail-panel.open { display: table-row; }
+    .step-line { border-left: 2px solid #334155; margin-left: 8px; padding-left: 12px; padding-top: 4px; padding-bottom: 4px; }
+    .step-line.step-status-passed { border-left-color: #065f46; }
+    .step-line.step-status-failed { border-left-color: #7f1d1d; }
+    .step-line.step-status-running { border-left-color: #1e3a5f; }
+    .step-pass { color: #6ee7b7; }
+    .step-fail { color: #fca5a5; }
+    .step-num { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.65rem; font-weight: 700; margin-right: 6px; flex-shrink: 0; }
+    .step-num-passed { background: #065f46; color: #6ee7b7; }
+    .step-num-failed { background: #7f1d1d; color: #fca5a5; }
+    .step-num-running { background: #1e3a5f; color: #93c5fd; }
+    .step-expected { color: #94a3b8; font-style: italic; margin-left: 28px; font-size: 0.7rem; }
+    .step-expected::before { content: '\2192  Expected: '; color: #64748b; font-style: normal; }
+    .step-screenshot-inline { width: 140px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #334155; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; margin-left: 28px; margin-top: 4px; }
+    .step-screenshot-inline:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+    .thumb { width: 200px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #334155; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .thumb:hover { transform: scale(1.08); box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .artifact-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .section-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #1e293b; }
+    .detail-section { margin-bottom: 16px; }
+    .error-box { background: #1c1017; border: 1px solid #7f1d1d; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.75rem; color: #fca5a5; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; }
+    .error-preview { font-size: 0.7rem; color: #f87171; max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .step-summary { display: flex; gap: 8px; margin-bottom: 8px; }
+    .step-summary-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .test-meta { display: flex; gap: 12px; font-size: 0.7rem; color: #64748b; margin-bottom: 12px; }
+    .test-meta span { display: flex; align-items: center; gap: 4px; }
+    .bug-tag { background: #b91c1c; color: #fef2f2; font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; font-weight: 700; letter-spacing: 0.05em; }
+    .suite-tag { font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; background: #1e3a5f; color: #93c5fd; }
+    .mode-tag { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-left: 8px; }
+    .mode-interactive { background: #7c3aed; color: #ede9fe; }
+    .mode-scripted { background: #1e3a5f; color: #93c5fd; }
+
+    /* Tab styles */
+    .tab-bar { display: flex; gap: 0; border-bottom: 2px solid #334155; margin-bottom: 16px; }
+    .tab-btn { padding: 10px 24px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; border: none; background: transparent; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+    .tab-btn:hover { color: #94a3b8; background: rgba(255,255,255,0.03); }
+    .tab-btn.active { color: #e2e8f0; border-bottom-color: #3b82f6; }
+
+    /* DirectPro styles */
+    .dpro-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; text-align: center; }
+    .dpro-card .num { font-size: 1.75rem; font-weight: 700; }
+    .dpro-card .label { font-size: 0.7rem; color: #94a3b8; margin-top: 2px; }
+    .dpro-card .sub { font-size: 0.65rem; color: #64748b; margin-top: 1px; }
+    .dpro-progress { height: 24px; border-radius: 8px; background: #334155; overflow: hidden; display: flex; }
+    .dpro-progress > div { height: 100%; transition: width 0.5s ease; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em; min-width: 0; overflow: hidden; }
+    .dpro-table { width: 100%; font-size: 0.75rem; border-collapse: collapse; }
+    .dpro-table th { text-align: left; padding: 6px 8px; color: #64748b; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #334155; position: sticky; top: 0; background: #1e293b; }
+    .dpro-table td { padding: 5px 8px; border-bottom: 1px solid #1e293b; }
+    .dpro-table tr:hover { background: rgba(255,255,255,0.02); }
+    .dpro-filter { padding: 4px 10px; font-size: 0.7rem; font-weight: 600; background: #334155; color: #94a3b8; border: 1px solid #475569; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+    .dpro-filter:hover { background: #475569; color: #e2e8f0; }
+    .dpro-filter.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+    .status-credits_purchased { background: #10b981; }
+    .status-verified { background: #3b82f6; }
+    .status-skip_CA { background: #f59e0b; }
+    .status-NA { background: #6b7280; }
+    .status-FAILED { background: #ef4444; }
+    .status-needs_verification { background: #a855f7; }
+    .team-badge { font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+    .team-badge-purchased { background: #065f46; color: #6ee7b7; }
+    .team-badge-verified { background: #1e3a5f; color: #93c5fd; }
+    .team-badge-pending { background: #374151; color: #9ca3af; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* History styles */
+    .history-row { cursor: pointer; transition: background 0.2s; }
+    .history-row:hover { background: #1e293b; }
+    .history-row.expanded { background: #172033; }
+    .history-detail { display: none; background: #0d1526; border-top: 1px solid #1e293b; }
+    .history-detail.open { display: table-row; }
+    .history-mini-bar { display: flex; height: 16px; border-radius: 4px; overflow: hidden; min-width: 100px; }
+    .history-mini-bar .bar-passed { background: #065f46; }
+    .history-mini-bar .bar-failed { background: #7f1d1d; }
+    .history-mini-bar .bar-skipped { background: #44403c; }
+    .history-stat { font-size: 0.65rem; display: inline-flex; align-items: center; gap: 3px; }
+    .history-stat .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .history-stat .dot-passed { background: #10b981; }
+    .history-stat .dot-failed { background: #ef4444; }
+    .history-stat .dot-skipped { background: #78716c; }
+    .history-empty { text-align: center; padding: 48px 16px; color: #64748b; }
+    .history-loading { text-align: center; padding: 32px 16px; color: #94a3b8; }
+    /* ctrl-h9: one size for toolbar buttons, selects, single-line inputs (36px, text-sm) — see .cursor/rules/ui-control-consistency.mdc */
+    .ctrl-h9 {
+      box-sizing: border-box;
+      min-height: 2.25rem;
+      height: 2.25rem;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      border-radius: 0.5rem;
+    }
+    button.ctrl-h9 {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+    select.ctrl-h9 {
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      min-height: 2.25rem;
+      height: 2.25rem;
+      padding: 0 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      background: #334155;
+      color: #94a3b8;
+      border: 1px solid #475569;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .refresh-btn:hover { background: #475569; color: #e2e8f0; }
+    .refresh-btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .run-date { color: #94a3b8; font-size: 0.75rem; }
+    .run-time-ago { color: #64748b; font-size: 0.65rem; }
+
+    /* Checkboxes — align with .ctrl-h9 / slate card controls */
+    .dash-cb {
+      width: 1.25rem;
+      height: 1.25rem;
+      min-width: 1.25rem;
+      flex-shrink: 0;
+      border-radius: 0.375rem;
+      border: 1px solid #64748b;
+      background: #0f172a;
+      accent-color: #38bdf8;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .dash-cb:focus {
+      outline: 2px solid rgba(56, 189, 248, 0.45);
+      outline-offset: 2px;
+    }
+    .dash-cb:disabled { opacity: 0.45; cursor: not-allowed; }
+    #stripe-country-matrix-panel.stripe-matrix-panel--dimmed {
+      opacity: 0.48;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    /* Account Navigator embedded in-tab (not iframe): align with dashboard width */
+    #navigator-embed-root { width: 100%; }
+    #navigator-embed-root > div:first-child { margin-top: 0 !important; max-width: 100% !important; }
+
+    /* ── Ambient background effects ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E");
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    .glow-blob {
+      position: fixed; border-radius: 50%; filter: blur(120px);
+      pointer-events: none; z-index: 0; animation: blobFloat 12s ease-in-out infinite;
+      transition: opacity 0.4s;
+    }
+    .glow-blob-1 { width: 600px; height: 600px; background: rgba(59,130,246,0.07); top: -200px; left: -200px; }
+    .glow-blob-2 { width: 500px; height: 500px; background: rgba(99,102,241,0.06); bottom: 10%; right: -150px; animation-delay: -6s; }
+    .glow-blob-3 { width: 400px; height: 400px; background: rgba(16,185,129,0.05); top: 50%; left: 40%; animation-delay: -3s; }
+    @keyframes blobFloat { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,20px) scale(1.05); } }
+    body.bg-off::before { opacity: 0; }
+    body.bg-off .glow-blob { opacity: 0; animation: none; }
+
+    /* ── Suite dropdown controls ── */
+    .view-filter-bar { display: flex; gap: 6px; margin-bottom: 10px; }
+    .vf-btn { padding: 4px 12px; font-size: 0.72rem; font-weight: 600; background: #334155; color: #94a3b8; border: 1px solid #475569; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+    .vf-btn:hover { background: #475569; color: #e2e8f0; }
+    .vf-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .vf-btn.vf-passed.active { background: #065f46; border-color: #10b981; color: #6ee7b7; }
+    .vf-btn.vf-failed.active { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+    .vf-btn.vf-skipped.active { background: #44403c; border-color: #78716c; color: #d6d3d1; }
+    .vf-btn.vf-pending.active { background: #374151; border-color: #6b7280; color: #9ca3af; }
+
+    /* ── BG toggle button ── */
+    #bg-toggle {
+      width: 28px; height: 28px; border-radius: 50%; border: 1px solid #334155;
+      background: #1e293b; color: #64748b; font-size: 0.75rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    #bg-toggle:hover { border-color: #475569; color: #94a3b8; }
+    #bg-toggle.active { border-color: #3b82f6; color: #93c5fd; background: rgba(59,130,246,0.1); }
+  </style>
+  <script src="/env-manager.js"></script>
+</head>
+<body class="min-h-screen p-6 bg-gradient-to-b from-slate-950 via-[#0a1628] to-slate-950 text-slate-200">
+  <div class="glow-blob glow-blob-1"></div>
+  <div class="glow-blob glow-blob-2"></div>
+  <div class="glow-blob glow-blob-3"></div>
+  <div class="max-w-7xl mx-auto" style="position:relative;z-index:1">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-white">QA Live Testing Dashboard <span class="text-base font-normal text-slate-500">— NETGEAR Insight</span></h1>
+        <p class="text-slate-400 text-sm mt-1" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="status-text" class="text-yellow-400">Connecting...</span>
+          <span id="mode-indicator" class="mode-tag" style="display:none"></span>
+          <span id="ws-indicator" class="ws-dot ws-disconnected"></span>
+          <span id="elapsed" class="text-slate-500 font-mono">--</span>
+          <button id="bg-toggle" title="Toggle ambient background effects" onclick="toggleBg()">✦</button>
+        </p>
+      </div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" data-tab="current" onclick="switchTab('current')">Live Run</button>
+      <button type="button" class="tab-btn" data-tab="history" onclick="switchTab('history')">Past Runs</button>
+      <button type="button" class="tab-btn" data-tab="dpro" onclick="switchTab('dpro')">DirectPro</button>
+      <button type="button" class="tab-btn" data-tab="nav" onclick="switchTab('nav')">Navigator</button>
+      <button type="button" class="tab-btn" data-tab="stripe" onclick="switchTab('stripe')">Stripe Matrix</button>
+    </div>
+
+    <!-- Global controls: sit directly under the tab bar, stay visible on every tab -->
+    <div id="admin-controls" class="flex gap-2 items-center flex-wrap mb-4 p-3 rounded-lg border border-slate-700/70 bg-slate-900/40">
+      <select id="suite-select" onchange="onSuiteChange()" class="ctrl-h9 px-2 text-sm" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;min-width:200px;">
+        <optgroup label="── Hackathon Demo ──">
+          <option value="legacy:hackathon-demo" selected>Hackathon Demo (2 workers)</option>
+        </optgroup>
+      </select>
+      <select id="env-select" class="ctrl-h9 px-2 text-sm" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;min-width:140px;">
+        <!-- Populated by env-manager.js (defaults + user-added hosts) -->
+      </select>
+      <input id="tc-filter" type="text" placeholder="TC filter: T67453 or T67453|T67456" class="ctrl-h9 px-2 text-sm" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;min-width:220px;" title="Grep filter — enter a TC key or regex.">
+      <label class="flex items-center gap-2 text-sm text-slate-400 select-none cursor-pointer">
+        <input type="checkbox" id="chk-failed-only" class="dash-cb" style="accent-color:#f87171"> Failed only
+      </label>
+      <button id="btn-copy-md" onclick="copyRunAsMarkdown()" class="ctrl-h9 px-3 text-sm font-semibold transition" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;" title="Copy current run as Markdown report">⎘ Copy MD</button>
+      <button id="btn-run" onclick="apiRun()" class="ctrl-h9 px-4 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold shadow-lg shadow-cyan-900/30 transition">&#9654; Launch</button>
+      <button id="btn-kill" onclick="apiKill()" class="ctrl-h9 px-4 rounded-lg border border-red-500/40 bg-red-950/40 text-red-200 hover:bg-red-900/50 text-sm font-semibold transition">&#9632; Abort</button>
+    </div>
+
+    <!-- Tab: Current Run -->
+    <div id="tab-current" class="tab-content active">
+      <!-- Stats cards -->
+      <div id="stats-bar" class="grid grid-cols-5 gap-3 mb-4" style="display:none">
+        <div class="card p-3 text-center"><div id="stat-total" class="text-2xl font-bold text-white">0</div><div class="text-slate-500 text-xs">Total</div></div>
+        <div class="card p-3 text-center"><div id="stat-passed" class="text-2xl font-bold text-green-400">0</div><div class="text-slate-500 text-xs">Passed</div></div>
+        <div class="card p-3 text-center"><div id="stat-failed" class="text-2xl font-bold text-red-400">0</div><div class="text-slate-500 text-xs">Failed</div></div>
+        <div class="card p-3 text-center"><div id="stat-running" class="text-2xl font-bold text-blue-400">0</div><div class="text-slate-500 text-xs">Active</div></div>
+        <div class="card p-3 text-center"><div id="stat-pending" class="text-2xl font-bold text-slate-500">0</div><div class="text-slate-500 text-xs">Queued</div></div>
+      </div>
+      <!-- Progress bar -->
+      <div id="progress-section" class="card p-3 mb-4" style="display:none">
+        <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">Completion</span><span id="progress-pct" class="text-white font-mono">0%</span></div>
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill" style="width:0%;background:linear-gradient(90deg,#10b981,#3b82f6)"></div></div>
+      </div>
+      <div class="view-filter-bar">
+        <button class="vf-btn active" data-vf="all" onclick="setViewFilter('all')">All</button>
+        <button class="vf-btn vf-passed" data-vf="passed" onclick="setViewFilter('passed')">Passed</button>
+        <button class="vf-btn vf-failed" data-vf="failed" onclick="setViewFilter('failed')">Failed</button>
+        <button class="vf-btn vf-skipped" data-vf="skipped" onclick="setViewFilter('skipped')">Skipped</button>
+        <button class="vf-btn vf-pending" data-vf="pending" onclick="setViewFilter('pending')">Pending</button>
+      </div>
+      <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-slate-700 text-slate-400 text-left text-xs">
+            <th class="px-3 py-2 w-8">#</th>
+            <th class="px-3 py-2">Test Case</th>
+            <th class="px-3 py-2 w-14">Attempt</th>
+            <th class="px-3 py-2 w-20">Status</th>
+            <th class="px-3 py-2 w-20">Duration</th>
+            <th class="px-3 py-2">Failure</th>
+          </tr></thead>
+          <tbody id="test-rows"><tr><td colspan="6" class="text-center py-8 text-slate-500">No active run — hit ▶ Launch to start</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: DirectPro Purchases -->
+    <div id="tab-dpro" class="tab-content">
+      <div class="card p-3 mb-4 border border-blue-500/30 bg-blue-950/10 flex items-start gap-3">
+        <span style="font-size:1.2rem;line-height:1.4">📊</span>
+        <div>
+          <p class="text-xs font-semibold text-blue-200 mb-0.5">Read-only view — automation runs separately</p>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            DirectPro purchase automation runs via the <span class="font-mono text-slate-300">im10-dpro</span> scripts.
+            This is a live snapshot of the migration state — purchased, in queue, skipped, or failed — updated as the automation progresses.
+            Refresh anytime to pull the latest state.
+          </p>
+        </div>
+      </div>
+      <div id="dpro-summary-cards" class="grid grid-cols-6 gap-3 mb-4"></div>
+      <div class="card p-3 mb-4">
+        <div class="flex justify-between items-center text-xs mb-2">
+          <span class="text-slate-400">Migration Progress</span>
+          <span id="dpro-progress-label" class="text-white font-mono">--</span>
+        </div>
+        <div id="dpro-progress-bar" class="dpro-progress"></div>
+        <div id="dpro-progress-legend" class="flex gap-4 mt-2 text-xs"></div>
+      </div>
+
+      <div class="flex items-center justify-between mb-3">
+        <div id="dpro-filters" class="flex gap-2 flex-wrap"></div>
+        <div class="flex gap-2">
+          <button class="refresh-btn" onclick="loadDproStatus()">Refresh State</button>
+          <span id="dpro-updated" class="text-xs text-slate-600"></span>
+        </div>
+      </div>
+
+      <!-- DPRO Accounts Table -->
+      <div class="card overflow-hidden mb-6" style="max-height: 500px; overflow-y: auto;">
+        <table class="dpro-table">
+          <thead><tr>
+            <th>TC</th><th>Type</th><th>Country</th><th>Currency</th><th>Credits</th><th>Orgs</th><th>NHB</th><th>HB</th><th>Status</th><th>Notes</th>
+          </tr></thead>
+          <tbody id="dpro-table-body"><tr><td colspan="10" class="text-center py-6 text-slate-500">Fetching account data…</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Team Accounts Table -->
+      <h3 class="text-sm font-bold text-slate-300 mb-2">Team Accounts</h3>
+      <div class="card overflow-hidden" style="max-height: 400px; overflow-y: auto;">
+        <table class="dpro-table">
+          <thead><tr>
+            <th>SNo</th><th>Type</th><th>Country</th><th>Credits</th><th>Credit State</th><th>NHB</th><th>HB</th><th>Status</th><th>Email</th>
+          </tr></thead>
+          <tbody id="team-table-body"><tr><td colspan="9" class="text-center py-6 text-slate-500">Fetching team accounts…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Run History -->
+    <div id="tab-history" class="tab-content">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs text-slate-500"><span id="history-count">0</span> recorded runs</div>
+        <button class="refresh-btn" onclick="requestHistory()">Refresh</button>
+      </div>
+      <div class="card overflow-hidden">
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-slate-700 text-slate-400 text-left text-xs">
+            <th class="px-3 py-2 w-8">#</th>
+            <th class="px-3 py-2">Timestamp</th>
+            <th class="px-3 py-2 w-28">Outcome</th>
+            <th class="px-3 py-2 w-32">Breakdown</th>
+            <th class="px-3 py-2 w-20">Duration</th>
+            <th class="px-3 py-2 w-16">Tests</th>
+          </tr></thead>
+          <tbody id="history-rows"><tr><td colspan="6" class="history-loading">Fetching run archive…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Account Navigator (same document as dashboard — embedded, not iframe) -->
+    <div id="tab-nav" class="tab-content">
+      <div id="navigator-embed-root">
+        <p id="navigator-embed-placeholder" class="text-slate-500 text-sm py-6 text-center">Loading account lifecycle tools…</p>
+      </div>
+      <p class="text-slate-500 text-xs mt-4">
+        Embedded from <code class="text-slate-400">/navigator/</code> — same APIs, same host. Prefer a dedicated view?
+        <a class="text-blue-400 hover:underline" href="/navigator/" target="_blank" rel="noopener">Open in a new tab</a>
+        or run <code class="text-slate-400">node tools/account-navigator/server.js</code> on port 3000.
+      </p>
+    </div>
+
+    <!-- Tab: Stripe checkout preview (optional real purchase) -->
+    <div id="tab-stripe" class="tab-content">
+      <div class="card p-4 mb-4">
+        <h2 class="text-lg font-bold text-white mb-2">Global Checkout Matrix — Billing Validation</h2>
+        <p class="text-slate-400 text-sm mb-3">
+          <strong class="text-slate-300">Default run:</strong> the <strong>14-country NETGEAR Intl spec</strong> — per-country plan and billing address from the matrix. Creates a <strong>fresh mail.tm</strong> account per country, then drives the Stripe hosted checkout end-to-end. Billing fields are filled <strong>only where Stripe surfaces them</strong>.
+        </p>
+        <p class="text-slate-400 text-sm mb-3">
+          Evidence collected per country: before-fill, after-fill, and post-purchase screenshots. Artifacts land in <code class="text-slate-500">test-results/stripe-preview/run1</code>, <code class="text-slate-500">run2</code>, …
+        </p>
+        <p class="text-amber-400/90 text-xs mb-3">
+          Uncheck <em>Use intl scenario addresses</em> to run all selected ISOs against a single generic plan. Enable <em>Full matrix</em> to sweep every country in the extended set (~36 total).
+        </p>
+        <div class="flex flex-wrap gap-3 items-end mb-3">
+          <div>
+            <label class="text-xs text-slate-500 block mb-1">Insight portal</label>
+            <select id="stripe-insight-env" class="ctrl-h9 px-3 bg-slate-800 border border-slate-600 text-sm text-white">
+              <option value="pri-qa" selected>pri-qa</option>
+              <option value="maint-beta">maint-beta</option>
+              <option value="prod">insight.netgear.com — Production</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 block mb-1">Browser</label>
+            <select id="stripe-browser" class="ctrl-h9 px-3 bg-slate-800 border border-slate-600 text-sm text-white">
+              <option value="firefox" selected>Firefox</option>
+              <option value="chrome">Chrome / Chromium</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-slate-500 block mb-1">Default plan (non-scenario / generic)</label>
+            <select id="stripe-plan" class="ctrl-h9 px-3 bg-slate-800 border border-slate-600 text-sm text-white">
+              <option value="1-Year" selected>1-Year (Prepaid)</option>
+              <option value="3-Year">3-Year (Prepaid)</option>
+            </select>
+          </div>
+          <label class="flex items-center gap-3 cursor-pointer text-sm text-slate-300">
+            <input type="checkbox" id="stripe-new-account-each" checked class="dash-cb" />
+            <span>New mail.tm account per country</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer text-sm text-slate-300">
+            <input type="checkbox" id="stripe-use-scenario-spec" checked class="dash-cb" />
+            <span>Use intl scenario addresses + per-country plan</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer text-sm text-slate-300">
+            <input type="checkbox" id="stripe-complete-purchase" class="dash-cb" checked />
+            <span>Complete purchase (test card)</span>
+          </label>
+          <label class="flex items-center gap-3 cursor-pointer text-sm text-amber-200/90">
+            <input type="checkbox" id="stripe-run-full-matrix" class="dash-cb" />
+            <span>Full matrix (all countries, ~36)</span>
+          </label>
+        </div>
+        <div class="mb-3">
+          <p class="text-xs text-slate-400 mb-2 font-medium">Credit card</p>
+          <div class="flex flex-wrap gap-3 items-end">
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">Card number</label>
+              <input id="stripe-card-number" type="text" value="4242424242424242" maxlength="19" placeholder="4242 4242 4242 4242"
+                class="ctrl-h9 px-3 bg-slate-800 border border-slate-600 text-sm text-white font-mono w-44" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">Expiry (MM/YY)</label>
+              <input id="stripe-card-expiry" type="text" value="12/30" maxlength="5" placeholder="MM/YY"
+                class="ctrl-h9 px-3 bg-slate-800 border border-slate-600 text-sm text-white font-mono w-24" />
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 block mb-1">CVC</label>
+              <input id="stripe-card-cvc" type="text" value="123" maxlength="4" placeholder="123"
+                class="ctrl-h9 px-3 bg-slate-800 border border-slate-600 text-sm text-white font-mono w-20" />
+            </div>
+          </div>
+        </div>
+        <div id="stripe-country-matrix-panel" class="mb-3 rounded-lg border border-slate-700/80 bg-slate-900/30 p-3">
+          <p class="text-xs text-slate-500 mb-2">
+            <strong class="text-slate-400">Country × plan matrix:</strong> every matrix country appears as <strong>two</strong> rows (1-Year and 3-Year). Checkboxes stay disabled until you use <em>Select spec (14)</em>, <em>Clear</em>, or <em>Select all listed</em> — then you can change selections. Tokens look like <code class="text-slate-500">DE|3-Year</code>. <strong class="text-slate-400">Run with none checked</strong> (and Full matrix off) sends <strong>no</strong> country list — the server uses the same <strong>default 14-country intl spec</strong> as the page intro. When <strong class="text-amber-200/90">Full matrix</strong> above is on, this section is disabled (server sweeps all countries).
+          </p>
+          <div class="flex flex-wrap gap-2 items-center mb-2">
+            <span class="text-xs text-slate-500" id="stripe-country-matrix-label">Country × Plan Matrix</span>
+            <button type="button" class="refresh-btn stripe-matrix-toolbar-btn" onclick="void stripeSelectScenarioDefaults()">Intl Spec (14)</button>
+            <button type="button" class="refresh-btn stripe-matrix-toolbar-btn" onclick="stripeClearCountries()">Clear All</button>
+            <button type="button" class="refresh-btn stripe-matrix-toolbar-btn" onclick="stripeSelectAllIntl()">Select All</button>
+          </div>
+          <div id="stripe-country-checkboxes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 max-h-[min(70vh,520px)] overflow-y-auto text-xs text-slate-300 border border-slate-700 rounded p-2 bg-slate-900/50">
+            <span class="text-slate-500 col-span-full">Open this tab to load the country matrix…</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center mb-3">
+          <button type="button" class="refresh-btn bg-cyan-600 border-cyan-500 hover:bg-cyan-500 text-white" onclick="runStripePreviewMatrix()">Run Selected</button>
+          <button type="button" class="refresh-btn" onclick="loadStripePreviewState(true)">Refresh</button>
+        </div>
+        <div id="stripe-preview-status" class="text-xs text-slate-500 font-mono mb-2">—</div>
+      </div>
+      <div class="card overflow-hidden mb-4" style="max-height: 70vh; overflow-y: auto;">
+        <table class="dpro-table">
+          <thead><tr>
+            <th>Country</th>
+            <th>Code</th>
+            <th>Account</th>
+            <th>Expected</th>
+            <th>Observed</th>
+            <th>Purchase</th>
+            <th>Match</th>
+            <th>Portal</th>
+            <th>Billing</th>
+            <th>Evidence</th>
+          </tr></thead>
+          <tbody id="stripe-preview-table-body">
+            <tr><td colspan="10" class="text-center py-6 text-slate-500">Select countries above and run, or refresh to load the last result.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card p-4 mb-4">
+        <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+          <h3 class="text-md font-bold text-white">Run Archive</h3>
+          <button type="button" class="refresh-btn" onclick="loadStripePreviewRunHistory()">Refresh Archive</button>
+        </div>
+        <p class="text-xs text-slate-500 mb-3">
+          Per-country results from every completed run — loaded from each run folder's <code class="text-slate-600">stripe-preview-run-report.json</code>. Browse screenshots without touching the filesystem.
+        </p>
+        <div id="stripe-preview-run-history" class="text-sm text-slate-400">Open this tab or click Refresh Archive to load past runs.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox for screenshots -->
+  <div id="lightbox" class="lightbox" style="display:none" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="">
+  </div>
+
+  <script>
+    let ws, reconnectTimer, startTime = null, endTime = null;
+    let currentData = null;
+    const expandedRows = new Set();
+
+    let historyData = [];
+    let historyDetailCache = {};
+    const expandedHistoryRows = new Set();
+    const expandedHistoryTests = {};
+    const DASHBOARD_TAB_STORAGE_KEY = 'dashboardActiveTab';
+    const VALID_DASHBOARD_TABS = ['current', 'history', 'dpro', 'nav', 'stripe'];
+    function readSavedDashboardTab() {
+      try {
+        const t = localStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
+        if (t && VALID_DASHBOARD_TABS.includes(t)) return t;
+      } catch (_) {}
+      return 'current';
+    }
+
+    let activeTab = 'current';
+    let navigatorEmbedMounted = false;
+
+    // ── Account Navigator: inject /navigator/ markup + script into this page (no iframe) ──
+    async function mountNavigatorEmbed() {
+      if (navigatorEmbedMounted) return;
+      const root = document.getElementById('navigator-embed-root');
+      if (!root) return;
+      root.innerHTML = '<p class="text-slate-500 text-sm py-6 text-center">Loading Account Navigator…</p>';
+      try {
+        const res = await fetch('/navigator/index.html', { cache: 'no-store' });
+        if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        // Navigator keeps critical CSS in <head>. The embed only appended <body> children, so
+        // .tab-panel / #createFlowSection rules never applied — tabs looked "dead" on localhost:9323/.
+        (function injectNavigatorHeadForEmbed(parsed) {
+          if (document.getElementById('navigator-embed-anv-styles')) return;
+          if (!document.getElementById('navigator-embed-fonts')) {
+            const gl = parsed.querySelector('head link[rel="stylesheet"][href*="fonts.googleapis.com/css2"]');
+            if (gl) {
+              const l = document.createElement('link');
+              l.id = 'navigator-embed-fonts';
+              l.rel = 'stylesheet';
+              l.href = gl.getAttribute('href') || '';
+              document.head.appendChild(l);
+            }
+          }
+          let si = 0;
+          parsed.querySelectorAll('head style').forEach((st) => {
+            const s = document.createElement('style');
+            s.id = si === 0 ? 'navigator-embed-anv-styles' : 'navigator-embed-anv-styles-' + si;
+            si += 1;
+            s.setAttribute('data-navigator-embed', '1');
+            let css = st.textContent || '';
+            css = css.replace(/\bbody\s*\{/g, '#navigator-embed-root {');
+            css = css.replace(
+              /\bselect\s*,\s*input\s*,\s*textarea\s*\{/g,
+              '#navigator-embed-root select, #navigator-embed-root input, #navigator-embed-root textarea {'
+            );
+            s.textContent = css;
+            document.head.appendChild(s);
+          });
+        })(doc);
+        doc.querySelectorAll('a[href]').forEach((a) => {
+          const h = a.getAttribute('href');
+          if (!h || h.startsWith('http') || h.startsWith('/') || h.startsWith('#') || h.startsWith('mailto:')) return;
+          a.setAttribute('href', '/navigator/' + h.replace(/^\.\//, ''));
+        });
+        const body = doc.body;
+        if (!body) throw new Error('No body in /navigator/index.html');
+        const toAppend = [];
+        const scripts = [];
+        Array.from(body.children).forEach((el) => {
+          if (el.tagName === 'SCRIPT') scripts.push(el);
+          else toAppend.push(el);
+        });
+        root.innerHTML = '';
+        toAppend.forEach((el) => root.appendChild(document.importNode(el, true)));
+        scripts.forEach((el) => {
+          const s = document.createElement('script');
+          s.textContent = el.textContent;
+          root.appendChild(s);
+        });
+        try {
+          if (typeof tailwind !== 'undefined') {
+            if (typeof tailwind.refresh === 'function') tailwind.refresh();
+          }
+        } catch (e) {}
+        navigatorEmbedMounted = true;
+      } catch (e) {
+        root.innerHTML =
+          '<p class="text-red-400 text-sm py-6 text-center px-4">Could not load Account Navigator: ' +
+          String(e.message || e) +
+          '</p>';
+      }
+    }
+
+    /** Checkboxes only (no Step dropdown): exactly one checked → partial; neither or both → full sequence. */
+    function qaDashSubResolveStep() {
+      const sub = !!(document.getElementById('qa-dash-sub-license-only') && document.getElementById('qa-dash-sub-license-only').checked);
+      const nhb = !!(document.getElementById('qa-dash-sub-devices-only') && document.getElementById('qa-dash-sub-devices-only').checked);
+      if (sub && !nhb) return 'license-only';
+      if (!sub && nhb) return 'devices-only';
+      return 'all';
+    }
+
+    async function qaDashSubscriptionState(mode) {
+      const email = (document.getElementById('qa-dash-sub-email') && document.getElementById('qa-dash-sub-email').value || '').trim();
+      const dryRun = document.getElementById('qa-dash-sub-dry') && document.getElementById('qa-dash-sub-dry').checked;
+      const out = document.getElementById('qa-dash-sub-out');
+      if (!email) {
+        alert('Enter the account email.');
+        return;
+      }
+      if (out) {
+        out.classList.remove('hidden');
+        out.textContent = '…';
+      }
+      try {
+        const insightEnv =
+          document.getElementById('qa-dash-sub-insight') &&
+          document.getElementById('qa-dash-sub-insight').value === 'maint-beta'
+            ? 'maint-beta'
+            : 'pri-qa';
+        const step = qaDashSubResolveStep();
+        const bypassValidation = !!(document.getElementById('qa-dash-sub-bypass') && document.getElementById('qa-dash-sub-bypass').checked);
+        const res = await fetch('/api/qa/subscription-grace-expired', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, mode, dryRun, insightEnv, step, bypassValidation }),
+        });
+        const j = await res.json();
+        if (out) out.textContent = JSON.stringify(j, null, 2);
+        loadQaDashMongoHistory();
+      } catch (e) {
+        if (out) out.textContent = String(e.message || e);
+      }
+    }
+
+    function escapeHtmlDash(s) {
+      const d = document.createElement('div');
+      d.textContent = s == null ? '' : String(s);
+      return d.innerHTML;
+    }
+
+    async function loadQaDashMongoHistory() {
+      const tbody = document.getElementById('qa-dash-mongo-history-tbody');
+      const sel = document.getElementById('qa-dash-sub-insight');
+      if (!tbody || !sel) return;
+      tbody.innerHTML = '<tr><td colspan="5" class="px-2 py-2 text-slate-500">Loading…</td></tr>';
+      try {
+        const ie = sel.value === 'maint-beta' ? 'maint-beta' : 'pri-qa';
+        const res = await fetch('/api/qa/mongo-db-history?insightEnv=' + encodeURIComponent(ie));
+        const j = await res.json();
+        const entries = (j && j.entries) || [];
+        if (!entries.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" class="px-2 py-2 text-slate-500">No recorded changes for this environment yet.</td></tr>';
+          return;
+        }
+        const rows = [];
+        for (const e of entries) {
+          const st =
+            e.statusFrom != null && e.statusTo != null
+              ? `${e.statusFrom} → ${e.statusTo}`
+              : '—';
+          rows.push(
+            '<tr class="border-b border-slate-800/80">' +
+              '<td class="px-2 py-1.5 text-slate-400 whitespace-nowrap">' +
+              escapeHtmlDash(e.at) +
+              '</td>' +
+              '<td class="px-2 py-1.5">' +
+              escapeHtmlDash(e.email) +
+              '</td>' +
+              '<td class="px-2 py-1.5">' +
+              escapeHtmlDash(st) +
+              '</td>' +
+              '<td class="px-2 py-1.5">' +
+              escapeHtmlDash(e.scope != null ? e.scope : '—') +
+              '</td>' +
+              '<td class="px-2 py-1.5 text-slate-500">' +
+              escapeHtmlDash(e.mode != null ? e.mode : '—') +
+              '</td>' +
+              '</tr>'
+          );
+        }
+        tbody.innerHTML = rows.join('');
+      } catch (err) {
+        tbody.innerHTML =
+          '<tr><td colspan="5" class="px-2 py-2 text-red-400">' +
+          escapeHtmlDash(String(err.message || err)) +
+          '</td></tr>';
+      }
+    }
+
+    document.getElementById('qa-dash-sub-insight')?.addEventListener('change', () => {
+      loadQaDashMongoHistory();
+    });
+
+    // ── Tab switching ──
+    function switchTab(tab) {
+      activeTab = tab;
+      try {
+        localStorage.setItem(DASHBOARD_TAB_STORAGE_KEY, tab);
+      } catch (_) {}
+      document.querySelectorAll('.tab-btn').forEach((b) => {
+        b.classList.toggle('active', b.dataset.tab === tab);
+      });
+      document.querySelectorAll('.tab-content').forEach((c) => {
+        c.classList.toggle('active', c.id === 'tab-' + tab);
+      });
+      const showStats = tab === 'current';
+      document.getElementById('stats-bar').style.display = showStats ? '' : 'none';
+      document.getElementById('progress-section').style.display = showStats ? '' : 'none';
+      document.getElementById('admin-controls').style.display = showStats ? 'flex' : 'none';
+      if (tab === 'history') requestHistory();
+      if (tab === 'dpro') loadDproStatus();
+      if (tab === 'nav') {
+        mountNavigatorEmbed();
+        loadQaDashMongoHistory();
+      }
+      if (tab === 'stripe') {
+        wireStripeMatrixExclusiveUi();
+        loadStripeMatrixForPicker();
+        loadStripePreviewState(true);
+        loadStripePreviewRunHistory();
+        stripeApplyCountryMatrixPanelState();
+      }
+    }
+
+    // ── WebSocket connection ──
+    function connect() {
+      const st = document.getElementById('status-text');
+      st.textContent = 'Connecting...'; st.className = 'text-yellow-400';
+      ws = new WebSocket('ws://' + location.host);
+      ws.onopen = () => {
+        document.getElementById('ws-indicator').className = 'ws-dot ws-connected';
+        st.textContent = 'Connected'; st.className = 'text-green-400';
+        requestHistory();
+      };
+      ws.onclose = () => {
+        document.getElementById('ws-indicator').className = 'ws-dot ws-disconnected';
+        st.textContent = 'Disconnected'; st.className = 'text-red-400';
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'status') { currentData = msg.data; renderStatus(msg.data); }
+        if (msg.type === 'history') { historyData = msg.data || []; renderHistory(); }
+        if (msg.type === 'historyDetail') { onHistoryDetail(msg.data); }
+        if (msg.type === 'killed') {
+          // Freeze elapsed timer immediately — reporter.onEnd may never fire after SIGTERM.
+          endTime = msg.endTime || new Date().toISOString();
+          if (currentData) {
+            currentData.endTime = endTime;
+            if (currentData.overallStatus === 'running') currentData.overallStatus = 'aborted';
+            renderStatus(currentData);
+          }
+        }
+      };
+    }
+    connect();
+
+    function requestHistory() {
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'getHistory' }));
+    }
+    function requestHistoryDetail(file) {
+      if (historyDetailCache[file]) { onHistoryDetail(historyDetailCache[file]); return; }
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'getHistoryDetail', file }));
+    }
+
+    // ── Shared helpers ──
+    function badgeClass(s) {
+      if (s === 'passed') return 'badge-passed';
+      if (s === 'failed' || s === 'timedOut') return 'badge-failed';
+      if (s === 'running') return 'badge-running';
+      if (s === 'skipped' || s === 'interrupted') return 'badge-skipped';
+      return 'badge-pending';
+    }
+    function fmtDur(ms) { if (!ms) return '--'; return ms < 1000 ? ms + 'ms' : (ms / 1000).toFixed(1) + 's'; }
+    function showLightbox(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').style.display = 'flex'; }
+    function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+    function artifactUrl(p) { return p ? '/artifacts/' + encodeURIComponent(p) : ''; }
+    function fmtDate(iso) {
+      if (!iso) return '--';
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+        ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+    function timeAgo(iso) {
+      if (!iso) return '';
+      const ms = Date.now() - new Date(iso).getTime();
+      const m = Math.floor(ms / 60000), h = Math.floor(m / 60), d = Math.floor(h / 24);
+      if (d > 0) return d + 'd ago';
+      if (h > 0) return h + 'h ago';
+      if (m > 0) return m + 'm ago';
+      return 'just now';
+    }
+    function runDuration(start, end) {
+      if (!start || !end) return '--';
+      return fmtDur(new Date(end).getTime() - new Date(start).getTime());
+    }
+
+    // ── Current Run tab ──
+    function toggleRow(idx) {
+      if (expandedRows.has(idx)) expandedRows.delete(idx); else expandedRows.add(idx);
+      if (currentData) renderStatus(currentData);
+    }
+
+    function renderTestDetail(t) {
+      let html = '';
+      const steps = t.steps || [];
+      const passedSteps = steps.filter(s => s.status === 'passed').length;
+      const failedSteps = steps.filter(s => s.status === 'failed').length;
+
+      html += '<div class="test-meta">';
+      if (t.file) html += '<span>\ud83d\udcc1 ' + esc(t.file) + '</span>';
+      html += '<span>\u23f1 ' + fmtDur(t.duration) + '</span>';
+      if (steps.length) html += '<span>\ud83d\udccb ' + steps.length + ' steps</span>';
+      const imgs = (t.attachments || []).filter(a => a.path && a.contentType && a.contentType.includes('image'));
+      if (imgs.length) html += '<span>\ud83d\udcf8 ' + imgs.length + ' screenshots</span>';
+      html += '</div>';
+
+      if (steps.length) {
+        html += '<div class="detail-section">';
+        html += '<div class="section-header">Test Steps (' + passedSteps + ' passed' + (failedSteps > 0 ? ', ' + failedSteps + ' failed' : '') + ')</div>';
+        if (steps.length > 1) {
+          html += '<div class="step-summary">';
+          steps.forEach((st, si) => {
+            const c = st.status === 'failed' ? 'background:#7f1d1d;color:#fca5a5' : st.status === 'running' ? 'background:#1e3a5f;color:#93c5fd' : 'background:#065f46;color:#6ee7b7';
+            html += '<div class="step-summary-badge" style="' + c + '" title="' + esc(st.title) + '">' + (si + 1) + '</div>';
+          });
+          html += '</div>';
+        }
+        html += '<div class="text-xs">';
+        steps.forEach((st, si) => {
+          const stepSt = st.status || (st.error ? 'failed' : 'passed');
+          const numClass = stepSt === 'failed' ? 'step-num-failed' : stepSt === 'running' ? 'step-num-running' : 'step-num-passed';
+          const lineClass = 'step-line step-status-' + stepSt;
+          const indent = (st.depth || 0) * 16;
+          html += '<div class="' + lineClass + '" style="margin-left:' + indent + 'px">';
+          html += '<div style="display:flex;align-items:center;gap:4px;">';
+          html += '<span class="step-num ' + numClass + '">' + (st.index || si + 1) + '</span>';
+          html += '<span class="text-slate-200">' + esc(st.title) + '</span>';
+          if (st.duration) html += '<span class="text-slate-600 ml-auto font-mono">' + fmtDur(st.duration) + '</span>';
+          html += '</div>';
+          if (st.expected) html += '<div class="step-expected">' + esc(st.expected) + '</div>';
+          if (st.error) html += '<div class="text-red-400 ml-7 mt-1 text-xs">' + esc(st.error) + '</div>';
+          if (st.screenshot) {
+            html += '<img class="step-screenshot-inline" src="' + artifactUrl(st.screenshot) + '" ' +
+              'onclick="event.stopPropagation();showLightbox(this.src)" title="' + esc(st.title) + '">';
+          }
+          html += '</div>';
+        });
+        html += '</div></div>';
+      } else if (t.status !== 'pending') {
+        html += '<div class="detail-section"><div class="section-header">Test Steps</div>';
+        html += '<div class="text-xs text-slate-500 italic">No steps recorded for this test.</div></div>';
+      }
+
+      if (t.error) {
+        html += '<div class="detail-section">';
+        html += '<div class="section-header" style="color:#f87171">Error Details</div>';
+        html += '<div class="error-box">' + esc(t.error) + '</div></div>';
+      }
+
+      if (imgs.length) {
+        html += '<div class="detail-section">';
+        html += '<div class="section-header">Screenshots (' + imgs.length + ')</div>';
+        html += '<div class="artifact-grid">';
+        imgs.forEach(a => {
+          html += '<div style="text-align:center">';
+          html += '<img class="thumb" src="' + artifactUrl(a.path) + '" onclick="event.stopPropagation();showLightbox(this.src)" title="' + esc(a.name) + '">';
+          html += '<div class="text-xs text-slate-500 mt-1" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(a.name) + '</div>';
+          if (a.step) html += '<div class="text-xs text-slate-600">Step ' + a.step + '</div>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      }
+      return html;
+    }
+
+    function renderStatus(d) {
+      startTime = d.startTime; endTime = d.endTime || null;
+      const s = d.summary;
+      const st = document.getElementById('status-text');
+      if (d.overallStatus === 'running' || d.overallStatus === 'pending') {
+        st.textContent = 'Running...'; st.className = 'text-yellow-400 pulse';
+      } else if (d.overallStatus === 'passed') {
+        st.textContent = 'All Passed'; st.className = 'text-green-400';
+      } else {
+        st.textContent = 'Done'; st.className = 'text-red-400';
+      }
+      const modeEl = document.getElementById('mode-indicator');
+      if (d.mode === 'interactive') {
+        modeEl.textContent = 'Interactive'; modeEl.className = 'mode-tag mode-interactive'; modeEl.style.display = 'inline-block';
+      } else if (d.mode) {
+        modeEl.textContent = d.mode; modeEl.className = 'mode-tag mode-scripted'; modeEl.style.display = 'inline-block';
+      } else {
+        modeEl.textContent = 'Scripted'; modeEl.className = 'mode-tag mode-scripted'; modeEl.style.display = 'inline-block';
+      }
+      document.getElementById('stat-total').textContent = s.total;
+      document.getElementById('stat-passed').textContent = s.passed;
+      document.getElementById('stat-failed').textContent = s.failed;
+      document.getElementById('stat-running').textContent = s.inProgress;
+      document.getElementById('stat-pending').textContent = s.pending;
+
+      const done = s.passed + s.failed + (s.skipped || 0);
+      const pct = s.total > 0 ? Math.min(100, Math.round(done / s.total * 100)) : 0;
+      document.getElementById('progress-pct').textContent = pct + '%';
+      const fill = document.getElementById('progress-fill');
+      fill.style.width = pct + '%';
+      const passRatio = done > 0 ? Math.round(s.passed / done * 100) : 100;
+      if (s.failed > 0) fill.style.background = 'linear-gradient(90deg,#10b981 ' + passRatio + '%,#ef4444 100%)';
+      else fill.style.background = 'linear-gradient(90deg,#10b981,#3b82f6)';
+
+      window._lastStatusData = d;
+      applyStatusData(d);
+    }
+
+    let _viewFilter = 'all';
+
+    function setViewFilter(f) {
+      _viewFilter = f;
+      document.querySelectorAll('.vf-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.vf === f);
+      });
+      if (window._lastStatusData) applyStatusData(window._lastStatusData);
+    }
+
+    function applyStatusData(d) {
+      const tbody = document.getElementById('test-rows');
+      const tests = d.tests || [];
+      const filtered = _viewFilter === 'all' ? tests : tests.filter(t => {
+        const s = t.status;
+        if (_viewFilter === 'skipped') return s === 'skipped' || s === 'interrupted';
+        return s === _viewFilter;
+      });
+      let html = '';
+      filtered.forEach((t, fi) => {
+        const i = tests.indexOf(t);
+        const isExp = expandedRows.has(i);
+        const isBug = (t.title || '').includes('BUG') || (t.error || '').startsWith('BUG:');
+        const steps = t.steps || [];
+        const passedSteps = steps.filter(s => s.status === 'passed').length;
+        const stepInfo = steps.length ? '<span class="text-slate-600 text-xs ml-1">(' + passedSteps + '/' + steps.length + ' steps)</span>' : '';
+
+        html += '<tr class="test-row border-b border-slate-800' + (isExp ? ' expanded' : '') + '" onclick="toggleRow(' + i + ')">' +
+          '<td class="px-3 py-2 text-slate-500 text-xs">' + (i + 1) + '</td>' +
+          '<td class="px-3 py-2 text-slate-200 text-xs">' + esc(t.title) + (isBug ? ' <span class="bug-tag">BUG</span>' : '') +
+            stepInfo + ' <span class="text-slate-600">' + (isExp ? '&#9650;' : '&#9660;') + '</span></td>' +
+          '<td class="px-3 py-2 text-slate-500 text-xs">' + (t.retry > 0 ? '#' + t.retry : '') + '</td>' +
+          '<td class="px-3 py-2"><span class="badge ' + badgeClass(t.status) + '">' + t.status + '</span></td>' +
+          '<td class="px-3 py-2 text-slate-400 font-mono text-xs">' + fmtDur(t.duration) + '</td>' +
+          '<td class="px-3 py-2"><div class="error-preview">' + esc(t.error || '') + '</div></td></tr>';
+
+        if (isExp) {
+          html += '<tr class="detail-panel open"><td colspan="6" class="px-4 py-4" onclick="event.stopPropagation()">';
+          html += renderTestDetail(t);
+          html += '</td></tr>';
+        }
+      });
+      if (!html) html = '<tr><td colspan="6" class="text-center py-6 text-slate-500">No ' + (_viewFilter !== 'all' ? _viewFilter : '') + ' tests</td></tr>';
+      tbody.innerHTML = html;
+    }
+
+    // ── Run History tab ──
+    function toggleHistoryRow(idx) {
+      const file = historyData[idx] && historyData[idx].file;
+      if (!file) return;
+      if (expandedHistoryRows.has(idx)) {
+        expandedHistoryRows.delete(idx);
+        renderHistory();
+      } else {
+        expandedHistoryRows.add(idx);
+        if (historyDetailCache[file]) {
+          renderHistory();
+        } else {
+          renderHistory();
+          requestHistoryDetail(file);
+        }
+      }
+    }
+
+    function toggleHistoryTest(runIdx, testIdx) {
+      const key = runIdx + '-' + testIdx;
+      if (!expandedHistoryTests[runIdx]) expandedHistoryTests[runIdx] = new Set();
+      if (expandedHistoryTests[runIdx].has(testIdx)) expandedHistoryTests[runIdx].delete(testIdx);
+      else expandedHistoryTests[runIdx].add(testIdx);
+      renderHistory();
+    }
+
+    function onHistoryDetail(data) {
+      if (!data) return;
+      const match = historyData.find(h => {
+        const cached = historyDetailCache[h.file];
+        return cached === data;
+      });
+      if (!match && data.startTime) {
+        const f = historyData.find(h => h.startTime === data.startTime);
+        if (f) historyDetailCache[f.file] = data;
+        else {
+          for (const h of historyData) {
+            if (!historyDetailCache[h.file] && expandedHistoryRows.has(historyData.indexOf(h))) {
+              historyDetailCache[h.file] = data;
+              break;
+            }
+          }
+        }
+      }
+      renderHistory();
+    }
+
+    function renderHistory() {
+      document.getElementById('history-count').textContent = historyData.length;
+      const tbody = document.getElementById('history-rows');
+
+      if (!historyData.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="history-empty">No past runs found. Run some tests first!</td></tr>';
+        return;
+      }
+
+      let html = '';
+      historyData.forEach((h, i) => {
+        const isExp = expandedHistoryRows.has(i);
+        const p = h.passed || 0, f = h.failed || 0, sk = h.skipped || 0, total = h.total || (p + f + sk);
+        const pPct = total > 0 ? (p / total * 100) : 0;
+        const fPct = total > 0 ? (f / total * 100) : 0;
+        const skPct = total > 0 ? (sk / total * 100) : 0;
+
+        html += '<tr class="history-row border-b border-slate-800' + (isExp ? ' expanded' : '') + '" onclick="toggleHistoryRow(' + i + ')">';
+        html += '<td class="px-3 py-2 text-slate-500 text-xs">' + (i + 1) + '</td>';
+        html += '<td class="px-3 py-2"><div class="run-date">' + fmtDate(h.startTime) + '</div><div class="run-time-ago">' + timeAgo(h.startTime) + '</div></td>';
+        html += '<td class="px-3 py-2"><span class="badge ' + badgeClass(h.overallStatus) + '">' + (h.overallStatus || '--') + '</span></td>';
+        html += '<td class="px-3 py-2">' +
+          '<div class="history-mini-bar">' +
+            '<div class="bar-passed" style="width:' + pPct + '%"></div>' +
+            '<div class="bar-failed" style="width:' + fPct + '%"></div>' +
+            '<div class="bar-skipped" style="width:' + skPct + '%"></div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:3px;">' +
+            '<span class="history-stat"><span class="dot dot-passed"></span>' + p + '</span>' +
+            '<span class="history-stat"><span class="dot dot-failed"></span>' + f + '</span>' +
+            (sk > 0 ? '<span class="history-stat"><span class="dot dot-skipped"></span>' + sk + '</span>' : '') +
+          '</div>' +
+        '</td>';
+        html += '<td class="px-3 py-2 text-slate-400 font-mono text-xs">' + runDuration(h.startTime, h.endTime) + '</td>';
+        html += '<td class="px-3 py-2 text-slate-400 text-xs">' + total + ' <span class="text-slate-600">' + (isExp ? '&#9650;' : '&#9660;') + '</span></td>';
+        html += '</tr>';
+
+        if (isExp) {
+          const detail = historyDetailCache[h.file];
+          html += '<tr class="history-detail open"><td colspan="6" class="px-4 py-4" onclick="event.stopPropagation()">';
+          if (!detail) {
+            html += '<div class="text-xs text-slate-500 pulse">Loading run details...</div>';
+          } else {
+            const tests = detail.tests || [];
+            const mode = detail.mode;
+            html += '<div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">';
+            html += '<span class="text-xs text-slate-500">' + fmtDate(detail.startTime) + ' \u2192 ' + fmtDate(detail.endTime) + '</span>';
+            if (mode) html += '<span class="mode-tag ' + (mode === 'interactive' ? 'mode-interactive' : 'mode-scripted') + '">' + mode + '</span>';
+            html += '</div>';
+
+            html += '<table class="w-full text-xs"><thead><tr class="border-b border-slate-700 text-slate-500">';
+            html += '<th class="px-2 py-1 text-left w-6">#</th>';
+            html += '<th class="px-2 py-1 text-left">Test</th>';
+            html += '<th class="px-2 py-1 text-left w-14">Retry</th>';
+            html += '<th class="px-2 py-1 text-left w-16">Status</th>';
+            html += '<th class="px-2 py-1 text-left w-16">Time</th>';
+            html += '<th class="px-2 py-1 text-left">Error</th>';
+            html += '</tr></thead><tbody>';
+
+            tests.forEach((t, ti) => {
+              const expTests = expandedHistoryTests[i] || new Set();
+              const isTestExp = expTests.has(ti);
+              const isBug = (t.title || '').includes('BUG') || (t.error || '').startsWith('BUG:');
+              const steps = t.steps || [];
+              const passedSteps = steps.filter(s => s.status === 'passed').length;
+              const stepInfo = steps.length ? ' <span class="text-slate-600">(' + passedSteps + '/' + steps.length + ')</span>' : '';
+
+              html += '<tr class="test-row border-b border-slate-800' + (isTestExp ? ' expanded' : '') + '" onclick="event.stopPropagation();toggleHistoryTest(' + i + ',' + ti + ')">';
+              html += '<td class="px-2 py-1.5 text-slate-600">' + (ti + 1) + '</td>';
+              html += '<td class="px-2 py-1.5 text-slate-300">' + esc(t.title) + (isBug ? ' <span class="bug-tag">BUG</span>' : '') + stepInfo +
+                ' <span class="text-slate-600">' + (isTestExp ? '&#9650;' : '&#9660;') + '</span></td>';
+              html += '<td class="px-2 py-1.5 text-slate-600">' + (t.retry > 0 ? '#' + t.retry : '') + '</td>';
+              html += '<td class="px-2 py-1.5"><span class="badge ' + badgeClass(t.status) + '">' + t.status + '</span></td>';
+              html += '<td class="px-2 py-1.5 text-slate-500 font-mono">' + fmtDur(t.duration) + '</td>';
+              html += '<td class="px-2 py-1.5"><div class="error-preview">' + esc(t.error || '') + '</div></td>';
+              html += '</tr>';
+
+              if (isTestExp) {
+                html += '<tr class="detail-panel open"><td colspan="6" class="px-4 py-3" onclick="event.stopPropagation()">';
+                html += renderTestDetail(t);
+                html += '</td></tr>';
+              }
+            });
+
+            html += '</tbody></table>';
+          }
+          html += '</td></tr>';
+        }
+      });
+      tbody.innerHTML = html;
+    }
+
+    // ── Elapsed timer ──
+    setInterval(() => {
+      const el = document.getElementById('elapsed');
+      if (!startTime) { el.textContent = '--'; return; }
+      const end = endTime ? new Date(endTime).getTime() : Date.now();
+      const d = end - new Date(startTime).getTime();
+      const sec = Math.floor(d / 1000), m = Math.floor(sec / 60);
+      el.textContent = m + 'm ' + (sec % 60) + 's' + (endTime ? ' (done)' : '');
+    }, 1000);
+
+    // ── Copy current run as Markdown ──
+    function copyRunAsMarkdown() {
+      const d = currentData;
+      if (!d || !d.tests || d.tests.length === 0) {
+        alert('No run data to copy yet — start a test run first.');
+        return;
+      }
+      const ts = d.startTime ? new Date(d.startTime).toLocaleString() : new Date().toLocaleString();
+      const dur = (d.startTime && d.endTime)
+        ? ((new Date(d.endTime) - new Date(d.startTime)) / 1000).toFixed(1) + 's'
+        : '—';
+      const s = d.summary || {};
+      const statusEmoji = { passed: '✅', failed: '❌', running: '🔄', pending: '⏳', skipped: '⏭️' };
+
+      const lines = [
+        '# QA Automation Dashboard — Run Report',
+        '**NETGEAR Insight Cloud Portal · Next Gear Unleashed 2026**',
+        '',
+        `**Run started:** ${ts}  `,
+        `**Duration:** ${dur}  `,
+        `**Suite:** 🚀 Hackathon Suite (2 workers · 10 TCs · pri-qa + maint-beta)  `,
+        `**Result:** ${d.overallStatus === 'passed' ? '✅ ALL PASSED' : d.overallStatus === 'failed' ? '❌ FAILURES DETECTED' : d.overallStatus?.toUpperCase() || '—'}`,
+        '',
+        '## Summary',
+        '',
+        `| Metric | Count |`,
+        `|--------|-------|`,
+        `| Total  | ${s.total || d.tests.length} |`,
+        `| ✅ Passed | ${s.passed || 0} |`,
+        `| ❌ Failed | ${s.failed || 0} |`,
+        `| ⏩ Skipped | ${s.skipped || 0} |`,
+        '',
+        '## Test Results',
+        '',
+        '| # | Test | Environment | Status | Duration |',
+        '|---|------|-------------|--------|----------|',
+        ...d.tests.map((t, i) => {
+          const env = t.title && t.title.includes('3yr') ? 'maint-beta' : 'pri-qa';
+          const plan = t.title && t.title.includes('3yr') ? '3-year' : '1-year';
+          const emoji = statusEmoji[t.status] || '—';
+          const dur = t.duration ? (t.duration / 1000).toFixed(1) + 's' : '—';
+          return `| ${i+1} | ${t.title || t.name || 'TC'+(i+1)} | ${env} (${plan}) | ${emoji} ${t.status} | ${dur} |`;
+        }),
+        '',
+        '## Steps Detail',
+        '',
+        ...d.tests.flatMap(t => {
+          if (!t.steps || t.steps.length === 0) return [];
+          const env = t.title && t.title.includes('3yr') ? 'maint-beta' : 'pri-qa';
+          return [
+            `### ${t.title || t.name} · ${env}`,
+            '',
+            ...(t.steps || []).map(st => {
+              const e = statusEmoji[st.status] || '·';
+              return `- ${e} ${st.title || st.name}` + (st.duration ? ` *(${(st.duration/1000).toFixed(1)}s)*` : '');
+            }),
+            '',
+          ];
+        }),
+        '---',
+        '',
+        '*Generated by QA Automation Dashboard · NETGEAR Insight · localhost:9324*',
+      ];
+
+      const md = lines.join('\n');
+      navigator.clipboard.writeText(md).then(() => {
+        const btn = document.getElementById('btn-copy-md');
+        const orig = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.color = '#6ee7b7';
+        btn.style.borderColor = '#065f46';
+        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+      }).catch(() => {
+        // Fallback: open in new tab as text
+        const blob = new Blob([md], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      });
+    }
+
+    // ── Background effects toggle ──
+    (function initBg() {
+      const off = localStorage.getItem('bgEffects') === 'off';
+      if (off) document.body.classList.add('bg-off');
+      const btn = document.getElementById('bg-toggle');
+      if (btn) btn.classList.toggle('active', !off);
+    })();
+    function toggleBg() {
+      const isOff = document.body.classList.toggle('bg-off');
+      localStorage.setItem('bgEffects', isOff ? 'off' : 'on');
+      const btn = document.getElementById('bg-toggle');
+      if (btn) btn.classList.toggle('active', !isOff);
+    }
+
+    // ── API buttons ──
+    async function apiKill() {
+      document.getElementById('btn-kill').textContent = 'Killing...';
+      try { await fetch('/api/kill', { method: 'POST' }); } catch(e) { alert(e.message); }
+      setTimeout(() => document.getElementById('btn-kill').textContent = 'Kill All', 2000);
+    }
+    const SUITE_CONFIGS = {
+      // Only the hackathon demo lives here. Full suite dashboard is in the
+      // sibling playwright/ repo.
+      'legacy:hackathon-demo': { suite: 'hackathon-demo' },
+    };
+
+    function onSuiteChange() {}
+
+    // Initialize env-select with user-managed env list (defaults + localStorage)
+    (function initDashEnv() {
+      const sel = document.getElementById('env-select');
+      if (!sel) return;
+      const saved = localStorage.getItem('dashInsightEnv') || 'pri-qa';
+      if (window.NGEnvManager) {
+        window.NGEnvManager.attach(sel, {
+          initial: saved,
+          buttonClass: 'ctrl-h9 px-2 ml-1 rounded border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700 text-sm',
+          onChange: (k) => localStorage.setItem('dashInsightEnv', k),
+        });
+      }
+    })();
+
+    async function apiRun() {
+      const btn = document.getElementById('btn-run');
+      const sel = document.getElementById('suite-select').value;
+      const failedOnly = document.getElementById('chk-failed-only').checked;
+      const env = document.getElementById('env-select').value;
+      const grep = (document.getElementById('tc-filter').value || '').trim();
+      btn.textContent = 'Starting...';
+      expandedRows.clear();
+      setViewFilter('all');
+      if (activeTab !== 'current') switchTab('current');
+
+      let body;
+      if (sel.startsWith('legacy:')) {
+        body = { suite: sel.replace('legacy:', ''), env, grep: grep || undefined };
+      } else {
+        const cfg = SUITE_CONFIGS[sel] || SUITE_CONFIGS['ntgr:all'];
+        body = { config: cfg.config, project: cfg.project, failedOnly, env, grep: grep || undefined };
+      }
+
+      try {
+        const r = await fetch('/api/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const d = await r.json();
+        btn.textContent = '\u25B6 PID ' + d.pid;
+      } catch(e) { alert(e.message); }
+      setTimeout(() => { btn.innerHTML = '&#9654; Launch'; }, 3000);
+    }
+
+    // ── DirectPro Purchases Tab ──
+    let dproData = null;
+    let dproFilter = 'all';
+
+    const STATUS_COLORS = {
+      credits_purchased: { bg: '#065f46', fg: '#6ee7b7', label: 'Purchased' },
+      verified: { bg: '#1e3a5f', fg: '#93c5fd', label: 'Pending' },
+      skip_CA: { bg: '#78350f', fg: '#fcd34d', label: 'Skip (CA)' },
+      NA: { bg: '#374151', fg: '#9ca3af', label: 'Not Supported' },
+      FAILED: { bg: '#7f1d1d', fg: '#fca5a5', label: 'Failed' },
+      needs_verification: { bg: '#581c87', fg: '#d8b4fe', label: 'Needs Verify' },
+    };
+
+    async function loadDproStatus() {
+      try {
+        const r = await fetch('/api/dpro-status');
+        const live = await r.json();
+        // Fall back to snapshot if live CSVs returned no accounts
+        if (!live.dpro || live.dpro.length === 0) {
+          const snap = await fetch('/api/dpro-snapshot');
+          dproData = await snap.json();
+        } else {
+          dproData = live;
+        }
+        renderDpro();
+      } catch(e) {
+        // Try snapshot directly on error
+        try {
+          const snap = await fetch('/api/dpro-snapshot');
+          dproData = await snap.json();
+          renderDpro();
+        } catch(e2) { console.error('dpro load error:', e2); }
+      }
+    }
+
+    function setDproFilter(f) {
+      dproFilter = f;
+      renderDpro();
+    }
+
+    function renderDpro() {
+      if (!dproData) return;
+      const { dpro, team, summary } = dproData;
+      const bd = summary.breakdown || {};
+
+      // Summary cards
+      const purchased = bd.credits_purchased || { count: 0, credits: 0 };
+      const verified = bd.verified || { count: 0, credits: 0 };
+      const skipCA = bd.skip_CA || { count: 0, credits: 0 };
+      const na = bd.NA || { count: 0, credits: 0 };
+      const failed = bd.FAILED || { count: 0, credits: 0 };
+      const needsV = bd.needs_verification || { count: 0, credits: 0 };
+
+      document.getElementById('dpro-summary-cards').innerHTML =
+        '<div class="dpro-card"><div class="num text-white">' + summary.total + '</div><div class="label">Total Accounts</div><div class="sub">' + summary.totalCredits + ' credits</div></div>' +
+        '<div class="dpro-card"><div class="num text-green-400">' + purchased.count + '</div><div class="label">Purchased</div><div class="sub">' + purchased.credits + ' credits</div></div>' +
+        '<div class="dpro-card"><div class="num text-blue-400">' + verified.count + '</div><div class="label">In Queue</div><div class="sub">' + verified.credits + ' credits</div></div>' +
+        '<div class="dpro-card"><div class="num text-yellow-400">' + skipCA.count + '</div><div class="label">Skipped (CA)</div><div class="sub">' + skipCA.credits + ' credits</div></div>' +
+        '<div class="dpro-card"><div class="num text-red-400">' + failed.count + '</div><div class="label">Failed</div><div class="sub">' + failed.credits + ' credits</div></div>' +
+        '<div class="dpro-card"><div class="num text-slate-400">' + (na.count + needsV.count) + '</div><div class="label">NA / Unverified</div><div class="sub">' + (na.credits + needsV.credits) + ' credits</div></div>';
+
+      // Progress bar
+      const total = summary.total || 1;
+      const segments = [
+        { key: 'credits_purchased', pct: (purchased.count / total * 100), color: '#10b981', label: purchased.count + ' Purchased' },
+        { key: 'verified', pct: (verified.count / total * 100), color: '#3b82f6', label: verified.count + ' In Queue' },
+        { key: 'skip_CA', pct: (skipCA.count / total * 100), color: '#f59e0b', label: skipCA.count + ' CA Skip' },
+        { key: 'FAILED', pct: (failed.count / total * 100), color: '#ef4444', label: failed.count + ' Failed' },
+        { key: 'NA', pct: ((na.count + needsV.count) / total * 100), color: '#6b7280', label: (na.count + needsV.count) + ' NA' },
+      ];
+      const purchasePct = Math.round(purchased.count / total * 100);
+      document.getElementById('dpro-progress-label').textContent = purchasePct + '% purchased (' + purchased.count + '/' + total + ')';
+      document.getElementById('dpro-progress-bar').innerHTML = segments.map(s =>
+        '<div style="width:' + s.pct + '%;background:' + s.color + '">' + (s.pct > 5 ? Math.round(s.pct) + '%' : '') + '</div>'
+      ).join('');
+      document.getElementById('dpro-progress-legend').innerHTML = segments.map(s =>
+        '<span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:50%;background:' + s.color + '"></span>' + s.label + '</span>'
+      ).join('');
+
+      // Filters
+      const filterKeys = ['all', 'credits_purchased', 'verified', 'skip_CA', 'FAILED', 'NA', 'needs_verification'];
+      const filterLabels = { all: 'All', credits_purchased: 'Purchased', verified: 'In Queue', skip_CA: 'Skip CA', FAILED: 'Failed', NA: 'Not Supported', needs_verification: 'Needs Verify' };
+      document.getElementById('dpro-filters').innerHTML = filterKeys.map(k =>
+        '<button class="dpro-filter' + (dproFilter === k ? ' active' : '') + '" onclick="setDproFilter(\'' + k + '\')">' +
+        filterLabels[k] + (k !== 'all' ? ' (' + (bd[k] ? bd[k].count : 0) + ')' : ' (' + summary.total + ')') + '</button>'
+      ).join('');
+
+      // Table
+      const filtered = dproFilter === 'all' ? dpro : dpro.filter(a => a.status === dproFilter);
+      const tbody = document.getElementById('dpro-table-body');
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-6 text-slate-500">No accounts match this filter</td></tr>';
+      } else {
+        tbody.innerHTML = filtered.map(a => {
+          const sc = STATUS_COLORS[a.status] || { bg: '#374151', fg: '#9ca3af', label: a.status };
+          return '<tr>' +
+            '<td class="font-mono text-slate-400">' + esc(a.tc) + '</td>' +
+            '<td><span class="text-xs" style="padding:1px 6px;border-radius:4px;background:' + (a.type === 'Core' ? '#1e3a5f' : '#374151') + ';color:' + (a.type === 'Core' ? '#93c5fd' : '#9ca3af') + '">' + esc(a.type) + '</span></td>' +
+            '<td>' + esc(a.countryName) + ' <span class="text-slate-600">(' + esc(a.country) + ')</span></td>' +
+            '<td class="font-mono">' + esc(a.currency) + '</td>' +
+            '<td class="font-mono text-white font-bold">' + a.credits + '</td>' +
+            '<td class="text-center">' + esc(a.orgs) + '</td>' +
+            '<td class="text-center">' + esc(a.nhb) + '</td>' +
+            '<td class="text-center">' + esc(a.hb) + '</td>' +
+            '<td><span style="padding:2px 8px;border-radius:9999px;font-size:0.65rem;font-weight:600;background:' + sc.bg + ';color:' + sc.fg + '">' + sc.label + '</span></td>' +
+            '<td class="text-slate-500 text-xs" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(a.notes) + '">' + esc(a.notes) + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      // Team table
+      const teamBody = document.getElementById('team-table-body');
+      if (!team.length) {
+        teamBody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-slate-500">No team accounts found</td></tr>';
+      } else {
+        teamBody.innerHTML = team.map(t => {
+          const st = t.status || 'unknown';
+          const isPurchased = st.includes('purchased');
+          const badgeCls = isPurchased ? 'team-badge-purchased' : st === 'verified' ? 'team-badge-verified' : 'team-badge-pending';
+          return '<tr>' +
+            '<td class="font-mono text-slate-400">' + esc(t.sno) + '</td>' +
+            '<td class="text-xs">' + esc(t.accountType) + '</td>' +
+            '<td>' + esc(t.country) + '</td>' +
+            '<td class="font-mono text-white">' + esc(t.totalCredits) + '</td>' +
+            '<td class="text-xs text-slate-400" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(t.creditState) + '">' + esc(t.creditState) + '</td>' +
+            '<td class="text-center">' + esc(t.nhb) + '</td>' +
+            '<td class="text-center">' + esc(t.hb) + '</td>' +
+            '<td><span class="team-badge ' + badgeCls + '">' + esc(st) + '</span></td>' +
+            '<td class="text-xs text-slate-500" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.email || '') + '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      // Updated timestamp
+      document.getElementById('dpro-updated').textContent = 'Updated: ' + new Date(dproData.updatedAt).toLocaleTimeString();
+    }
+
+    // Auto-refresh dpro every 30s if on that tab
+    setInterval(() => { if (activeTab === 'dpro') loadDproStatus(); }, 30000);
+    setInterval(() => { if (activeTab === 'stripe') loadStripePreviewState(false); }, 3000);
+
+    // ── Stripe checkout preview (Account Navigator API) ──
+    let stripeMatrixCache = null;
+    let stripeMatrixExclusiveUiWired = false;
+
+    /** True when matrix API returned a full payload (matrix + scenario tokens for “Select spec”). */
+    function stripeMatrixCacheIsComplete() {
+      return !!(
+        stripeMatrixCache &&
+        Array.isArray(stripeMatrixCache.matrix) &&
+        stripeMatrixCache.matrix.length > 0 &&
+        Array.isArray(stripeMatrixCache.scenarioSelectionTokens) &&
+        stripeMatrixCache.scenarioSelectionTokens.length > 0
+      );
+    }
+
+    /**
+     * Loads country×plan checkboxes from Navigator. Retries if cache is missing or stale
+     * (e.g. older API without scenarioSelectionTokens — “Select spec (14)” would no-op).
+     * @param {{ force?: boolean }} [opts]
+     */
+    async function loadStripeMatrixForPicker(opts) {
+      const force = !!(opts && opts.force);
+      if (!force && stripeMatrixCacheIsComplete()) return;
+      if (force) stripeMatrixCache = null;
+      try {
+        const r = await fetch('/api/stripe-checkout-preview/matrix');
+        const data = await r.json();
+        if (!r.ok || !data || !Array.isArray(data.matrix) || !data.matrix.length) {
+          stripeMatrixCache = null;
+          const box = document.getElementById('stripe-country-checkboxes');
+          if (box) {
+            box.innerHTML =
+              '<span class="text-slate-500">Could not load country list' +
+              (data && data.error ? ': ' + esc(String(data.error)) : !r.ok ? ' (HTTP ' + r.status + ')' : '') +
+              '.</span>';
+          }
+          return;
+        }
+        stripeMatrixCache = data;
+        renderStripeCountryPicker();
+      } catch (e) {
+        stripeMatrixCache = null;
+        console.error('stripe matrix load', e);
+        const box = document.getElementById('stripe-country-checkboxes');
+        if (box) {
+          box.innerHTML = '<span class="text-slate-500">Could not load country list (network error).</span>';
+        }
+      }
+    }
+
+    /** Full matrix vs manual country×plan selection: only one mode is interactive. */
+    function stripeApplyCountryMatrixPanelState() {
+      var fullEl = document.getElementById('stripe-run-full-matrix');
+      var fullOn = !!(fullEl && fullEl.checked);
+      var panel = document.getElementById('stripe-country-matrix-panel');
+      if (panel) {
+        panel.classList.toggle('stripe-matrix-panel--dimmed', fullOn);
+      }
+      document.querySelectorAll('button.stripe-matrix-toolbar-btn').forEach(function (b) {
+        b.disabled = fullOn;
+      });
+      document.querySelectorAll('input[name="stripe-iso"].stripe-country-cb').forEach(function (c) {
+        c.disabled = fullOn;
+      });
+    }
+
+    function wireStripeMatrixExclusiveUi() {
+      if (stripeMatrixExclusiveUiWired) return;
+      stripeMatrixExclusiveUiWired = true;
+      var fullEl = document.getElementById('stripe-run-full-matrix');
+      var panel = document.getElementById('stripe-country-matrix-panel');
+      if (fullEl) {
+        fullEl.addEventListener('change', function () {
+          if (fullEl.checked) {
+            stripeClearCountries();
+          }
+          stripeApplyCountryMatrixPanelState();
+        });
+      }
+      if (panel) {
+        panel.addEventListener('change', function (e) {
+          var t = e.target;
+          var fm = document.getElementById('stripe-run-full-matrix');
+          if (t && t.name === 'stripe-iso' && t.checked && fm) {
+            fm.checked = false;
+            stripeApplyCountryMatrixPanelState();
+          }
+        });
+      }
+    }
+
+    function stripeEnableCountryCheckboxes() {
+      document.querySelectorAll('input[name="stripe-iso"].stripe-country-cb').forEach(function (c) {
+        c.disabled = false;
+      });
+      stripeApplyCountryMatrixPanelState();
+    }
+
+    function renderStripeCountryPicker() {
+      const box = document.getElementById('stripe-country-checkboxes');
+      const labelEl = document.getElementById('stripe-country-matrix-label');
+      if (!stripeMatrixCache || !stripeMatrixCache.matrix) {
+        box.innerHTML = '<span class="text-slate-500">Could not load country list.</span>';
+        return;
+      }
+      /** Survive innerHTML replace when Run refetches matrix — otherwise checked rows vanish before POST. */
+      const prevChecked = new Set(
+        [].slice
+          .call(document.querySelectorAll('input[name="stripe-iso"]:checked'))
+          .map(function (c) {
+            return c.value;
+          })
+      );
+      const matrix = stripeMatrixCache.matrix;
+      const exp = stripeMatrixCache.expectedCurrency || {};
+      const plans = ['1-Year', '3-Year'];
+      const slots = [];
+      matrix.forEach(function (m) {
+        plans.forEach(function (plan) {
+          const token = m.iso2 + '|' + plan;
+          const cur = exp[m.iso2] || '—';
+          slots.push(
+            '<label class="flex items-start gap-3 cursor-pointer hover:text-white opacity-90">' +
+              '<input type="checkbox" name="stripe-iso" value="' +
+              esc(token) +
+              '" class="stripe-country-cb dash-cb mt-0.5" />' +
+              '<span>' +
+              esc(m.label) +
+              ' <span class="text-slate-500">(' +
+              esc(m.iso2) +
+              ')</span> · ' +
+              esc(plan) +
+              ' · ' +
+              esc(cur) +
+              '</span>' +
+              '</label>'
+          );
+        });
+      });
+      box.innerHTML = slots.join('');
+      if (prevChecked.size > 0) {
+        stripeEnableCountryCheckboxes();
+        document.querySelectorAll('input[name="stripe-iso"]').forEach(function (c) {
+          c.checked = prevChecked.has(c.value);
+        });
+      }
+      const n = matrix.length * 2;
+      if (labelEl) {
+        labelEl.textContent = 'Countries × plan (' + matrix.length + ' countries × 2 plans = ' + n + ' options)';
+      }
+      stripeApplyCountryMatrixPanelState();
+    }
+
+    function stripeSelectedIsoList() {
+      stripeEnableCountryCheckboxes();
+      return [].slice
+        .call(document.querySelectorAll('input[name="stripe-iso"]:checked'))
+        .map(function (c) {
+          return c.value;
+        });
+    }
+
+    function stripeClearCountries() {
+      stripeEnableCountryCheckboxes();
+      document.querySelectorAll('input[name="stripe-iso"]').forEach(function (c) {
+        c.checked = false;
+      });
+    }
+
+    function stripeSelectAllIntl() {
+      stripeEnableCountryCheckboxes();
+      document.querySelectorAll('input[name="stripe-iso"]').forEach(function (c) {
+        c.checked = true;
+      });
+    }
+
+    async function stripeSelectScenarioDefaults() {
+      await loadStripeMatrixForPicker({ force: !stripeMatrixCacheIsComplete() });
+      const st = document.getElementById('stripe-preview-status');
+      if (!stripeMatrixCacheIsComplete()) {
+        if (st) {
+          st.textContent =
+            'Error: country matrix not loaded yet or API missing scenarioSelectionTokens — wait a moment and try again, or refresh the page.';
+        }
+        return;
+      }
+      const tokens = stripeMatrixCache.scenarioSelectionTokens;
+      const set = {};
+      tokens.forEach(function (t) {
+        set[t] = true;
+      });
+      stripeEnableCountryCheckboxes();
+      document.querySelectorAll('input[name="stripe-iso"]').forEach(function (c) {
+        c.checked = !!set[c.value];
+      });
+      if (st) {
+        st.textContent = 'Selected ' + tokens.length + ' spec rows (14-country NETGEAR Intl). Enable “Run selected” when ready.';
+      }
+    }
+
+    async function runStripePreviewMatrix() {
+      stripeEnableCountryCheckboxes();
+      const tokensBeforeMatrixLoad = [].slice
+        .call(document.querySelectorAll('input[name="stripe-iso"]:checked'))
+        .map(function (c) {
+          return c.value;
+        });
+      await loadStripeMatrixForPicker();
+      const plan = document.getElementById('stripe-plan').value;
+      const completePurchase = document.getElementById('stripe-complete-purchase').checked;
+      const insightEnv = document.getElementById('stripe-insight-env').value;
+      const browser = document.getElementById('stripe-browser').value;
+      const newAccountPerCountry = document.getElementById('stripe-new-account-each').checked;
+      const useScenarioSpec = document.getElementById('stripe-use-scenario-spec').checked;
+      const runFullMatrix = document.getElementById('stripe-run-full-matrix').checked;
+      const card = {
+        number: (document.getElementById('stripe-card-number').value || '').replace(/\s/g, '') || '4242424242424242',
+        expiry: document.getElementById('stripe-card-expiry').value || '12/30',
+        cvc: document.getElementById('stripe-card-cvc').value || '123',
+      };
+      const st = document.getElementById('stripe-preview-status');
+      st.textContent = 'Starting…';
+      try {
+        const payload = {
+          plan,
+          completePurchase,
+          insightEnv,
+          browser,
+          newAccountPerCountry,
+          useScenarioSpec,
+          all: runFullMatrix,
+        };
+        payload.card = card;
+        if (!runFullMatrix) {
+          let sel = stripeSelectedIsoList();
+          if (!sel.length && tokensBeforeMatrixLoad.length) {
+            const pick = {};
+            tokensBeforeMatrixLoad.forEach(function (t) {
+              pick[t] = true;
+            });
+            stripeEnableCountryCheckboxes();
+            document.querySelectorAll('input[name="stripe-iso"]').forEach(function (c) {
+              c.checked = !!pick[c.value];
+            });
+            sel = stripeSelectedIsoList();
+          }
+          if (sel.length) {
+            payload.countries = sel;
+          }
+          /* No countries key → server resolvePreviewSubset() uses default 14 intl scenarios (same as empty list). */
+        }
+        if (!runFullMatrix && !payload.countries) {
+          st.textContent = 'Starting — default 14-country intl spec (no matrix rows checked)…';
+        }
+        const r = await fetch('/api/stripe-checkout-preview/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || r.statusText);
+        st.textContent = 'Started — ' + (j.runLabel || '') + ' — ' + (j.countryCount || '?') + ' countries' +
+          (j.completePurchase ? ' (purchase ON)' : ' (preview only)') +
+          ' · ' + (j.insightEnv || '') +
+          ' → ' + (j.outDir || '');
+        loadStripePreviewState(true);
+      } catch (e) {
+        st.textContent = 'Error: ' + e.message;
+      }
+    }
+
+    function stripeBillingFieldsSummary(meta) {
+      if (!meta || !meta.length) return '—';
+      return meta.slice(0, 8).map(function (m) {
+        return m.label || m.name || m.autocomplete || m.type || '';
+      }).filter(Boolean).join(', ').slice(0, 220);
+    }
+
+    /** One &lt;tr&gt; for Stripe preview — shared by live state + run history. */
+    function stripePreviewRowHtml(row) {
+      const ok = row.validation && row.validation.ok;
+      const matchCell = ok === true ? '<span class="text-green-400">yes</span>' :
+        ok === false ? '<span class="text-red-400">no</span>' :
+        '<span class="text-slate-500">—</span>';
+      const insight = row.validation && row.validation.note ? esc(row.validation.note) : '—';
+      const b = row.screenshots && row.screenshots.before ? artifactUrl(row.screenshots.before) : '';
+      const a = row.screenshots && row.screenshots.after ? artifactUrl(row.screenshots.after) : '';
+      const p = row.screenshots && row.screenshots.afterPurchase ? artifactUrl(row.screenshots.afterPurchase) : '';
+      const thumbs = (b ? '<a class="text-blue-400 hover:underline" href="' + b + '" target="_blank" rel="noopener">before</a>' : '') +
+        (b && a ? ' · ' : '') +
+        (a ? '<a class="text-blue-400 hover:underline" href="' + a + '" target="_blank" rel="noopener">filled</a>' : '') +
+        (a && p ? ' · ' : '') +
+        (p ? '<a class="text-blue-400 hover:underline" href="' + p + '" target="_blank" rel="noopener">after purchase</a>' : '');
+      const bill = esc(stripeBillingFieldsSummary(row.billingFieldsMeta));
+      return '<tr>' +
+        '<td>' + esc(row.countryLabel) + '</td>' +
+        '<td class="font-mono">' + esc(row.iso2) + '</td>' +
+        '<td class="text-xs text-slate-400 max-w-[14rem] break-all" title="' + esc(row.bootstrapEmail || '') + '">' + esc(row.bootstrapEmail || '—') + '</td>' +
+        '<td class="font-mono">' + esc(row.expectedCurrency || '—') + '</td>' +
+        '<td class="text-xs max-w-xs" style="word-break:break-word">' + esc(row.observedPricing || '—') + '</td>' +
+        '<td class="text-xs max-w-xs" style="word-break:break-word" title="' + esc(row.payButtonRaw || '') + '">' + esc(row.payButtonAfter || '—') + '</td>' +
+        '<td>' + matchCell + '</td>' +
+        '<td class="text-xs text-slate-400">' + insight + '</td>' +
+        '<td class="text-xs text-slate-500 max-w-[12rem]" title="' + bill + '">' + bill + '</td>' +
+        '<td class="text-xs">' + thumbs + '</td>' +
+        '</tr>';
+    }
+
+    async function loadStripePreviewRunHistory() {
+      const el = document.getElementById('stripe-preview-run-history');
+      if (!el) return;
+      el.innerHTML = '<span class="text-slate-500">Loading run history…</span>';
+      try {
+        const r = await fetch('/api/stripe-checkout-preview/history');
+        const d = await r.json();
+        const runs = d.runs || [];
+        if (!runs.length) {
+          el.innerHTML = '<p class="text-slate-500 text-sm">No saved runs yet. Complete a Stripe preview run (with purchase or not); reports appear as <code class="text-slate-600">test-results/stripe-preview/runN/stripe-preview-run-report.json</code>.</p>';
+          return;
+        }
+        const thead = '<thead><tr>' +
+          '<th>Country</th><th>ISO2</th><th>Account</th><th>Expected</th><th>Observed</th><th>Pay / purchase</th><th>Match</th><th>Insight</th><th>Billing fields</th><th>Screenshots</th>' +
+          '</tr></thead>';
+        el.innerHTML = runs.map(function (run) {
+          const rows = run.rows || [];
+          const inner = rows.length
+            ? rows.map(function (row) { return stripePreviewRowHtml(row); }).join('')
+            : '<tr><td colspan="10" class="text-center py-4 text-slate-500">No rows in report</td></tr>';
+          const sum = run.summary || {};
+          const sub = (sum.purchaseSucceeded != null || sum.needsInteractiveMcp != null)
+            ? ' · OK purchases: ' + (sum.purchaseSucceeded != null ? sum.purchaseSucceeded : '—') +
+              ' · MCP queue: ' + (sum.needsInteractiveMcp != null ? sum.needsInteractiveMcp : '—')
+            : '';
+          return '<div class="border border-slate-700 rounded-lg mb-4 overflow-hidden">' +
+            '<div class="bg-slate-800/90 px-3 py-2 text-xs text-slate-200 flex flex-wrap gap-x-4 gap-y-1 justify-between">' +
+            '<span class="font-semibold text-white">' + esc(run.runLabel || 'run') + '</span>' +
+            '<span class="text-slate-400">' + esc(run.finishedAt || '—') + '</span>' +
+            '<span>' + esc(run.insightEnv || '') + (run.completePurchase ? ' · purchase ON' : '') + sub + '</span>' +
+            '<span class="text-slate-500 font-mono">' + esc(run.outDirRel || '') + '</span>' +
+            '</div>' +
+            '<div class="overflow-x-auto max-h-[min(60vh,480px)]">' +
+            '<table class="dpro-table">' + thead + '<tbody>' + inner + '</tbody></table>' +
+            '</div></div>';
+        }).join('');
+      } catch (e) {
+        el.innerHTML = '<p class="text-red-400 text-sm">History failed: ' + esc(e.message) + '</p>';
+      }
+    }
+
+    let stripePreviewLastStatus = 'idle';
+
+    async function loadStripePreviewState(forceStatusLine) {
+      try {
+        const r = await fetch('/api/stripe-checkout-preview/state');
+        const s = await r.json();
+        if (stripePreviewLastStatus === 'running' && s.status === 'done') {
+          loadStripePreviewRunHistory();
+        }
+        stripePreviewLastStatus = s.status || 'idle';
+        const st = document.getElementById('stripe-preview-status');
+        if (forceStatusLine || s.status === 'running') {
+          let line = 'Status: ' + s.status;
+          if (s.runLabel) line += ' | ' + s.runLabel;
+          if (s.plan) line += ' | plan ' + s.plan;
+          if (s.useScenarioSpec && s.defaultPlan && s.plan && s.defaultPlan !== s.plan) {
+            line += ' (UI default ' + s.defaultPlan + ')';
+          }
+          if (s.insightEnv) line += ' | ' + s.insightEnv;
+          if (s.useScenarioSpec === false) line += ' | generic addresses';
+          if (s.completePurchase) line += ' | purchase: ON';
+          if (s.status === 'running' && s.currentLabel != null) {
+            var tot = s.countryTotal != null ? s.countryTotal : '?';
+            line += ' | ' + (s.currentIndex + 1) + '/' + tot + ' — ' + s.currentLabel;
+          }
+          if (s.outDir) line += ' | out: ' + s.outDir;
+          if (s.error) line += ' | ERROR: ' + s.error;
+          st.textContent = line;
+        }
+        const tbody = document.getElementById('stripe-preview-table-body');
+        const rows = s.rows || [];
+        if (!rows.length) {
+          if (s.status === 'running') {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center py-6 text-yellow-400">Running — rows appear as each country finishes…</td></tr>';
+          } else if (s.status === 'idle') {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center py-6 text-slate-500">No results yet. Run the matrix from here (default: new account per country).</td></tr>';
+          } else if (s.status === 'error') {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center py-6 text-red-400">Run failed. See status line above.</td></tr>';
+          }
+          return;
+        }
+        tbody.innerHTML = rows.map(function (row) { return stripePreviewRowHtml(row); }).join('');
+      } catch (e) {
+        document.getElementById('stripe-preview-status').textContent = 'Could not load state: ' + e.message;
+      }
+    }
+
+    // Restore last-open tab after refresh or reopening the browser (see DASHBOARD_TAB_STORAGE_KEY)
+    switchTab(readSavedDashboardTab());
+  </script>
+</body>
+</html>

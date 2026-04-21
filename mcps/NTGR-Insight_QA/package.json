@@ -1,0 +1,39 @@
+{
+  "name": "@netgear/ntgr-insight-qa-mcp",
+  "version": "0.2.3",
+  "private": true,
+  "description": "MCP server NTGR-Insight_QA: Insight QA dashboard + Account Navigator HTTP API for Cursor/Claude agents",
+  "icon": "assets/insight-logo.png",
+  "logo": "assets/insight-logo.png",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "netgear",
+    "insight",
+    "qa",
+    "playwright",
+    "account-navigator",
+    "stripe"
+  ],
+  "main": "index.js",
+  "bin": {
+    "ntgr-insight-qa-mcp": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "config-store.js",
+    "assets/",
+    "README.md",
+    "cursor-mcp.example.json"
+  ],
+  "scripts": {
+    "start": "node index.js",
+    "inspector": "npx @modelcontextprotocol/inspector node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0"
+  }
+}

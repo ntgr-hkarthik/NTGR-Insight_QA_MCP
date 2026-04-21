@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acc Purchase — Account Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+    <style>
+      body { background: #020617; color: #e2e8f0; font-family: 'DM Sans', 'Inter', system-ui, sans-serif; }
+      select, input, textarea { color-scheme: dark; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-slate-950 via-[#0a1628] to-slate-950 text-slate-200">
+    <div class="w-full max-w-[min(1400px,96vw)] mx-auto px-4 mt-8 mb-12">
+        <div class="rounded-2xl border border-emerald-500/25 bg-slate-900/50 p-6 shadow-xl shadow-emerald-950/20 backdrop-blur-sm mb-6">
+        <div>
+            <p class="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-emerald-400/90">Stripe · Hosted checkout</p>
+            <h1 class="mt-1 text-2xl font-bold text-white">Acc Purchase</h1>
+            <p class="text-sm text-slate-400 mt-1">Insight Manage Subscriptions → Stripe hosted checkout. Use the main Navigator <strong class="text-slate-300">Full combo</strong> flow, or keep this page open beside your Chromium session.</p>
+        </div>
+        </div>
+
+        <div class="rounded-xl border border-amber-500/30 bg-amber-950/25 text-amber-100 text-sm p-4 mb-6 shadow-inner">
+            <strong>Prerequisite:</strong> Chromium must already be logged into the <strong>same Insight portal</strong> you select below (pri-qa or maint-beta) — e.g. Navigator <strong>Open</strong>, or <strong>Create &amp; Add</strong>. For create + device + Stripe in one run, use the main page <strong>Full combo</strong> tab and <strong>Then subscribe (Stripe) in the same run</strong>.
+            <p class="mt-2 font-medium">From the test dashboard: <code class="bg-slate-900 text-amber-200 px-1.5 py-0.5 rounded border border-slate-600 text-xs">http://localhost:9323/navigator/acc-purchase.html</code> — or standalone <code class="bg-slate-900 text-amber-200 px-1.5 py-0.5 rounded border border-slate-600 text-xs">http://localhost:3000/acc-purchase.html</code>. Set <strong>Navigator API base</strong> below if needed. Restart Node after server changes.</p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-600 bg-slate-900/70 p-8 shadow-xl">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-slate-300 mb-1">Insight portal (Manage Subscriptions host)</label>
+            <select id="insightEnvSelect" class="w-full max-w-md border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100 mb-2">
+                <option value="pri-qa">pri-qa.insight.netgear.com</option>
+                <option value="maint-beta">maint-beta.insight.netgear.com</option>
+            </select>
+            <p class="text-xs text-slate-500 mb-3">Must match where the browser session is logged in. Saved in localStorage.</p>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Navigator API base (fix 404 if not on port 3000)</label>
+            <input type="text" id="apiBaseInput" placeholder="http://127.0.0.1:3000" class="w-full max-w-md border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm font-mono text-slate-100 placeholder:text-slate-500">
+            <p class="text-xs text-slate-500 mt-1">Saved in localStorage. Leave empty to auto-detect (same host:3000, or 127.0.0.1:3000 when opened as file / other port).</p>
+        </div>
+
+        <!-- Master toggle (same idea as “Add Device” enabling HB/NHB) -->
+        <div class="mb-6 p-4 rounded-lg border border-slate-600 bg-slate-900/60">
+            <label class="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" id="purchaseEnabled" class="w-5 h-5 text-blue-600 rounded border-slate-600">
+                <span class="font-semibold text-slate-100">Enable subscription purchase</span>
+            </label>
+            <p class="text-xs text-slate-500 mt-2 ml-8">When checked, plan/qty and optional address &amp; business options apply.</p>
+        </div>
+
+        <fieldset id="purchaseFields" disabled class="space-y-6 opacity-60">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Plan</label>
+                    <select id="planSelect" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-slate-100">
+                        <option value="1-Year" selected>1-Year (Prepaid)</option>
+                        <option value="3-Year">3-Year (Prepaid)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Quantity</label>
+                    <input type="number" id="qtyInput" min="1" value="1" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-slate-100">
+                </div>
+            </div>
+
+            <!-- Device context (HB/NHB) — same pattern as main page; used for logging / future use -->
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1">Device context (HB / NHB)</label>
+                <p class="text-xs text-slate-500 mb-2">Matches main Navigator device type. Does not change Stripe fields today; sent with the request for traceability.</p>
+                <select id="deviceContext" class="w-full max-w-xs border border-slate-600 rounded bg-slate-900 px-3 py-2 text-slate-100">
+                    <option value="na" selected>Not applicable</option>
+                    <option value="NHB">NHB</option>
+                    <option value="HB">HB</option>
+                </select>
+            </div>
+
+            <div class="border-t border-slate-600 pt-4">
+                <label class="flex items-center gap-3 cursor-pointer mb-3">
+                    <input type="checkbox" id="fillFullAddress" class="w-4 h-4 text-blue-600 rounded border-slate-600">
+                    <span class="font-medium text-slate-100">Fill full billing address (manual)</span>
+                </label>
+                <p class="text-xs text-slate-500 mb-3 ml-7">Opens “Enter address manually” on Stripe when needed and fills lines below.</p>
+                <p class="text-xs text-amber-200 ml-7 mb-2">With <strong>full address</strong> off, <strong>Country</strong> below is ignored on Stripe — the page keeps whatever country the checkout already shows (Insight/Stripe default). Pick a country only to override that.</p>
+
+                <div id="addressBlock" class="ml-7 space-y-3 opacity-50 pointer-events-none">
+                    <p class="text-xs text-slate-500">Pick a country to load matrix default address lines (same as Stripe preview). “Use Stripe default” leaves Insight/Stripe checkout country unchanged.</p>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400">Country (billing) — optional override</label>
+                        <select id="addrCountry" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100">
+                            <option value="" selected>Use Stripe checkout default (do not change)</option>
+                            <option value="__loading__" disabled>Loading matrix…</option>
+                        </select>
+                    </div>
+                    <input type="text" id="addr1" placeholder="Address line 1" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100" value="">
+                    <input type="text" id="addr2" placeholder="Address line 2 (optional)" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100" value="">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="addrCity" placeholder="City / Suburb" class="border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100" value="">
+                        <input type="text" id="addrZip" placeholder="ZIP / Postcode / PIN" class="border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100" value="">
+                    </div>
+                    <input type="text" id="addrState" placeholder="State / Region / County" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100" value="">
+                </div>
+            </div>
+
+            <div class="border-t border-slate-600 pt-4">
+                <label class="flex items-center gap-3 cursor-pointer mb-3">
+                    <input type="checkbox" id="businessPurchase" class="w-4 h-4 text-blue-600 rounded border-slate-600">
+                    <span class="font-medium text-slate-100">Business purchase</span>
+                </label>
+                <p class="text-xs text-slate-500 mb-3 ml-7">Checks “I’m purchasing as a business” and fills tax ID when provided.</p>
+
+                <div id="businessBlock" class="ml-7 space-y-3 opacity-50 pointer-events-none">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400">Business / tax ID (ABN, VAT, GSTIN, …)</label>
+                        <input type="text" id="businessId" placeholder="e.g. 12345678912" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400">Tax ID type hint (optional)</label>
+                        <input type="text" id="taxIdTypeHint" placeholder="e.g. ABN, GB, IE" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400">Cardholder name</label>
+                        <input type="text" id="cardholder" placeholder="Name on card" class="w-full border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100" value="Test Business">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-600 pt-4">
+                <label class="block text-xs font-medium text-slate-400 mb-1">Max wait after Pay (ms)</label>
+                <input type="number" id="maxWaitMs" value="360000" step="60000" class="w-full max-w-xs border border-slate-600 rounded bg-slate-900 px-3 py-2 text-sm text-slate-100">
+                <p class="text-xs text-slate-500 mt-1">Stripe may show Processing for several minutes.</p>
+            </div>
+        </fieldset>
+
+        <div class="mt-8 flex flex-wrap gap-3 items-center">
+            <button type="button" id="btnRun" disabled class="bg-blue-600 text-white px-8 py-3 rounded font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                Run purchase
+            </button>
+            <span id="status" class="text-sm text-slate-400">Idle</span>
+        </div>
+        </div><!-- inner card -->
+    </div><!-- max-w -->
+
+    <script>
+        const NAV_STANDALONE_PORT = 3000;
+        function resolveApiBase() {
+            const input = document.getElementById('apiBaseInput');
+            const manual = (input && input.value || '').trim().replace(/\/$/, '');
+            if (manual) {
+                localStorage.setItem('navigatorApiBase', manual);
+                return manual;
+            }
+            const saved = (localStorage.getItem('navigatorApiBase') || '').trim().replace(/\/$/, '');
+            if (saved) return saved;
+            const { protocol } = window.location;
+            if (protocol === 'file:') {
+                return `http://127.0.0.1:${NAV_STANDALONE_PORT}`;
+            }
+            return window.location.origin;
+        }
+
+        const el = (id) => document.getElementById(id);
+        (function initApiBaseField() {
+            const saved = localStorage.getItem('navigatorApiBase');
+            if (saved) el('apiBaseInput').value = saved;
+        })();
+        (function initInsightEnvAccPurchase() {
+            const sel = el('insightEnvSelect');
+            if (!sel) return;
+            const saved = localStorage.getItem('navigatorInsightEnv');
+            if (saved === 'maint-beta' || saved === 'pri-qa') sel.value = saved;
+            sel.addEventListener('change', () => localStorage.setItem('navigatorInsightEnv', sel.value));
+        })();
+
+        async function applyAccPurchaseAddressForIso(iso) {
+            if (!iso) return;
+            const base = resolveApiBase();
+            try {
+                const r = await fetch(base + '/api/stripe-preview-default-address/' + encodeURIComponent(iso));
+                if (!r.ok) return;
+                const a = await r.json();
+                el('addr1').value = a.addr1 || '';
+                el('addr2').value = a.addr2 || '';
+                el('addrCity').value = a.city || '';
+                el('addrZip').value = a.zip || '';
+                el('addrState').value = a.state || '';
+            } catch (e) {
+                console.error('[acc-purchase page] default address', e);
+            }
+        }
+
+        (async function initAccPurchaseCountryMatrix() {
+            const sel = el('addrCountry');
+            if (!sel) return;
+            const base = resolveApiBase();
+            try {
+                const r = await fetch(base + '/api/stripe-checkout-preview/matrix');
+                const j = await r.json();
+                const matrix = j.matrix || [];
+                sel.innerHTML = '<option value="">Use Stripe checkout default (do not change)</option>';
+                matrix.forEach((m) => {
+                    const opt = document.createElement('option');
+                    opt.value = m.iso2;
+                    opt.textContent = `${m.label} (${m.iso2})`;
+                    sel.appendChild(opt);
+                });
+                sel.addEventListener('change', () => {
+                    const v = sel.value.trim();
+                    if (v) applyAccPurchaseAddressForIso(v);
+                });
+            } catch (e) {
+                console.error('[acc-purchase page] matrix', e);
+                sel.innerHTML =
+                    '<option value="">Use Stripe checkout default (do not change)</option>' +
+                    '<option value="US">United States (US)</option>';
+            }
+        })();
+        const purchaseEnabled = el('purchaseEnabled');
+        const purchaseFields = el('purchaseFields');
+        const btnRun = el('btnRun');
+        const statusEl = el('status');
+        const fillFullAddress = el('fillFullAddress');
+        const addressBlock = el('addressBlock');
+        const businessPurchase = el('businessPurchase');
+        const businessBlock = el('businessBlock');
+
+        function syncPurchaseMaster() {
+            const on = purchaseEnabled.checked;
+            purchaseFields.disabled = !on;
+            purchaseFields.classList.toggle('opacity-60', !on);
+            btnRun.disabled = !on;
+        }
+
+        function syncAddressBlock() {
+            const on = fillFullAddress.checked && purchaseEnabled.checked;
+            addressBlock.classList.toggle('opacity-50', !on);
+            addressBlock.classList.toggle('pointer-events-none', !on);
+        }
+
+        function syncBusinessBlock() {
+            const on = businessPurchase.checked && purchaseEnabled.checked;
+            businessBlock.classList.toggle('opacity-50', !on);
+            businessBlock.classList.toggle('pointer-events-none', !on);
+        }
+
+        purchaseEnabled.addEventListener('change', () => {
+            syncPurchaseMaster();
+            syncAddressBlock();
+            syncBusinessBlock();
+        });
+        fillFullAddress.addEventListener('change', syncAddressBlock);
+        businessPurchase.addEventListener('change', syncBusinessBlock);
+
+        btnRun.onclick = async () => {
+            if (!purchaseEnabled.checked) return;
+            const countryOverride = el('addrCountry').value.trim();
+            if (fillFullAddress.checked && !countryOverride) {
+                alert('Full billing address needs a country. Pick one in Country (billing), or uncheck “Fill full billing address” to keep Stripe’s default country.');
+                return;
+            }
+            btnRun.disabled = true;
+            statusEl.textContent = 'Running… (do not close the Chromium window)';
+            statusEl.className = 'text-sm text-amber-400';
+
+            const zipOnly = el('addrZip').value.trim();
+            const body = {
+                enabled: true,
+                insightEnv: el('insightEnvSelect').value,
+                plan: el('planSelect').value,
+                qty: parseInt(el('qtyInput').value, 10) || 1,
+                fillFullAddress: fillFullAddress.checked,
+                address: {
+                    addr1: el('addr1').value.trim(),
+                    addr2: el('addr2').value.trim(),
+                    city: el('addrCity').value.trim(),
+                    state: el('addrState').value.trim(),
+                    zip: zipOnly,
+                },
+                businessPurchase: businessPurchase.checked,
+                businessId: el('businessId').value.trim(),
+                taxIdTypeHint: el('taxIdTypeHint').value.trim(),
+                cardholder: el('cardholder').value.trim() || undefined,
+                deviceContext: el('deviceContext').value,
+                maxWaitMs: parseInt(el('maxWaitMs').value, 10) || 360000,
+            };
+            if (countryOverride) {
+                body.address.countryCode = countryOverride;
+            }
+
+            if (!body.fillFullAddress) {
+                body.address = countryOverride
+                    ? { countryCode: countryOverride, zip: zipOnly }
+                    : { zip: zipOnly };
+            }
+
+            if (!body.businessPurchase) {
+                delete body.businessId;
+                delete body.taxIdTypeHint;
+            }
+
+            try {
+                const base = resolveApiBase();
+                const url = `${base}/api/acc-purchase`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    statusEl.textContent = 'Error: ' + (data.error || res.status);
+                    statusEl.className = 'text-sm text-red-400';
+                } else {
+                    statusEl.textContent = 'Done — ' + (data.url || 'returned to Insight');
+                    statusEl.className = 'text-sm text-green-400';
+                }
+            } catch (e) {
+                statusEl.textContent = 'Error: ' + e.message;
+                statusEl.className = 'text-sm text-red-400';
+            } finally {
+                btnRun.disabled = !purchaseEnabled.checked;
+            }
+        };
+
+        syncPurchaseMaster();
+        syncAddressBlock();
+        syncBusinessBlock();
+    </script>
+</body>
+</html>
