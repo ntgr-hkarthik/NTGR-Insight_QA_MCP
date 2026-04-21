@@ -21,7 +21,7 @@ Each major folder also has a short **`README.md`** describing what is inside (`d
 
 ## Requirements
 
-- **macOS** (Ventura or later) for the provided `setup.sh` bootstrap. On Linux or Windows, install **Node.js 20+** and **Playwright Chromium** yourself, then follow the same `npm install` steps below.
+- **OS**: `setup.sh` auto-detects your OS and installs Node.js 20+ for you — **macOS 13+**, **Ubuntu 20.04+ / Debian** (apt/dnf/pacman), and **Windows 10/11** (Git Bash or WSL). Windows users without Git Bash can run `setup.ps1` in PowerShell instead.
 - **Network**: Staging Insight hosts and QA Mongo endpoints may require **VPN** or internal access — expected for a NETGEAR QA toolchain.
 - **Secrets**: Do not commit API keys or passwords. Use local config or environment variables as described in the MCP README.
 
@@ -32,12 +32,18 @@ Each major folder also has a short **`README.md`** describing what is inside (`d
 From the repository root:
 
 ```bash
-chmod +x setup.sh && ./setup.sh   # macOS only — installs Node, Chromium, dependencies
-npm install
-cd tools/account-navigator && npm install && cd ../..
-npx playwright install chromium
+# macOS / Linux / Windows-Git-Bash / WSL — auto-detects OS and installs Node 20 + deps
+chmod +x setup.sh && ./setup.sh
+
+# Windows PowerShell alternative:
+#   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+#   .\setup.ps1
+
+# Start dashboard
 node dashboard/server.js
 ```
+
+`setup.sh` handles the OS-specific package install: **Homebrew** on macOS, **apt/dnf/pacman** on Linux/WSL, **winget/choco/nvm-windows** on Windows. After Node 20 is ready it runs `npm install` in the root, `tools/account-navigator`, and `mcps/NTGR-Insight_QA`, then installs Playwright Chromium.
 
 Then open:
 
@@ -82,4 +88,4 @@ Disposable email providers sometimes show challenges. Chrome is launched with au
 
 ## Platform note
 
-**macOS** is the primary tested platform for `setup.sh`. Linux and Windows users should install Node 20+, run `npm install` in the root and in `tools/account-navigator`, run `npx playwright install chromium`, then start the dashboard manually.
+`setup.sh` has been tested on **macOS 13+**, **Ubuntu 22.04 / Debian 12**, and **Windows 11 (Git Bash + WSL2)**. It detects the OS automatically and installs Node.js 20 via the native package manager (Homebrew / apt / dnf / pacman / winget / choco / nvm-windows). Windows users who prefer native PowerShell can run `setup.ps1`. If your distro is unsupported, install Node 20+ manually, then re-run `setup.sh` — it will skip the install step and proceed with `npm install` + Playwright Chromium.

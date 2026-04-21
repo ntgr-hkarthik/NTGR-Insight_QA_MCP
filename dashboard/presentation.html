@@ -1108,14 +1108,15 @@
     <div class="section-label">Reproducibility</div>
     <h2 class="section-title">Setup Guide. <span class="grad-text">Zero Ambiguity.</span></h2>
     <p class="section-sub">
-      Every dependency is declarative. Every step is deterministic. From a bare Mac to a running dashboard
-      in under five minutes — no institutional knowledge required.
+      Every dependency is declarative. Every step is deterministic. From a bare machine — macOS, Ubuntu, or Windows — to a running dashboard in under five minutes. <code>setup.sh</code> detects your OS and installs Node.js 20 automatically via the right native package manager.
     </p>
 
     <!-- Prerequisites -->
     <div class="setup-prereq reveal">
-      <div class="prereq-chip"><span class="prereq-icon">🍎</span> macOS 13+ (Ventura or later)</div>
-      <div class="prereq-chip"><span class="prereq-icon">🟢</span> Node.js 20+ LTS</div>
+      <div class="prereq-chip"><span class="prereq-icon">🍎</span> macOS 13+</div>
+      <div class="prereq-chip"><span class="prereq-icon">🐧</span> Ubuntu 20.04+ / Debian</div>
+      <div class="prereq-chip"><span class="prereq-icon">🪟</span> Windows 10 / 11</div>
+      <div class="prereq-chip"><span class="prereq-icon">🟢</span> Node.js 20+ LTS (auto-installed)</div>
       <div class="prereq-chip"><span class="prereq-icon">🎭</span> Playwright 1.58+</div>
       <div class="prereq-chip"><span class="prereq-icon">🌐</span> Chromium (auto-installed)</div>
       <div class="prereq-chip"><span class="prereq-icon">📡</span> NETGEAR VPN / Network access</div>
@@ -1160,9 +1161,9 @@
       <div class="setup-step reveal">
         <div class="step-badge">02</div>
         <div>
-          <h4>Install Node.js 20 LTS via Homebrew</h4>
-          <p>Homebrew is the canonical package manager for macOS. Node 20 ships with <code>npm 10</code>, which resolves all declared peer dependencies deterministically via the lockfile.</p>
-          <span class="cmd">brew install node@20</span>
+          <h4>Install Node.js 20 LTS — OS-aware</h4>
+          <p><code>setup.sh</code> detects your OS and installs Node 20 via the right native package manager: <strong>Homebrew</strong> on macOS, <strong>apt / dnf / pacman</strong> on Ubuntu/Debian/Fedora/Arch (and WSL), <strong>winget / Chocolatey / nvm-windows</strong> on Windows. A companion <code>setup.ps1</code> is available for PowerShell users who don't have Git Bash.</p>
+          <span class="cmd">./setup.sh   # or   .\setup.ps1</span>
         </div>
       </div>
 
@@ -1243,13 +1244,15 @@
     </div>
 
     <!-- OS support note -->
-    <div class="setup-os-note reveal" style="margin-top:16px; border-color:rgba(245,158,11,0.25); background:rgba(245,158,11,0.05);">
-      <span style="font-size:1.4rem">🛠️</span>
+    <div class="setup-os-note reveal" style="margin-top:16px; border-color:rgba(34,197,94,0.3); background:rgba(34,197,94,0.06);">
+      <span style="font-size:1.4rem">✅</span>
       <p>
-        <strong>macOS is the primary supported platform</strong> for this hackathon submission.
-        <strong>Ubuntu &amp; Windows support — coming soon.</strong>
-        The Playwright test runner, Node.js server, and WebSocket layer are fully cross-platform;
-        only the <code>setup.sh</code> bootstrap script is currently Mac-specific.
+        <strong>Cross-platform:</strong> the same <code>setup.sh</code> has been tested on
+        <strong>macOS 13+</strong>, <strong>Ubuntu 22.04 / Debian 12</strong>, and <strong>Windows 10 / 11</strong> (Git Bash + WSL2).
+        It auto-detects your OS and routes Node installation through the right native package manager —
+        Homebrew, apt, dnf, pacman, winget, Chocolatey, or nvm-windows. Windows users without Git Bash can run
+        the PowerShell equivalent <code>setup.ps1</code>. The Playwright runner, dashboard server, WebSocket layer,
+        and MCP are fully cross-platform.
       </p>
     </div>
 
