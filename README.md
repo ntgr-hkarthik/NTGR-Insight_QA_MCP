@@ -15,6 +15,8 @@ A hackathon submission that bundles **Playwright end-to-end tests**, a **live da
 
 Technical architecture and API details are in **`MCP.md`**. MCP installation and tool list are in **`mcps/NTGR-Insight_QA/README.md`**.
 
+Each major folder also has a short **`README.md`** describing what is inside (`dashboard/`, `tools/`, `tests/`, `scripts/`, `docs/`, `mcps/`, and nested paths where helpful).
+
 ---
 
 ## Requirements
